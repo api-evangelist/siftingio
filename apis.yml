@@ -10,7 +10,7 @@ description: >-
   and JavaScript SDKs, an open-source (locally-run) MCP server with 36 tools, and a provider-published agent
   ruleset. Operated by SaltingIO LLC, a Wyoming company; explicitly not a broker, exchange or trading venue.
 image: https://sifting.io/logo.svg
-url: https://siftingio.apievangelist.com/apis.yml
+url: https://raw.githubusercontent.com/api-evangelist/siftingio/refs/heads/main/apis.yml
 created: '2026-08-17'
 modified: '2026-08-17'
 specificationVersion: '0.21'
