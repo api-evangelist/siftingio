@@ -1,0 +1,120 @@
+name: SiftingIO
+description: >-
+  Market data API platform providing real-time and historical data for stocks, FX, crypto, commodities, DEX, and
+  on-chain markets through REST, WebSocket, and FIX APIs. Notably agent-forward with a hosted MCP server, llms.txt, and
+  published agent skills.
+url: https://siftingio.apievangelist.com/apis.yml
+created: '2026-08-17'
+modified: '2026-08-17'
+specificationVersion: '0.21'
+tags:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
+  - SEC filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-time streaming
+  - WebSocket
+  - FIX
+apis:
+  - name: SiftingIO Market Data API
+    description: >-
+      REST API for historical OHLCV, live market data, currency conversion, discovery, SEC filings, filing
+      text/analysis, XBRL financials, insiders & holdings, economic calendar, market hours, technical signals, and DEX
+      wallets. Version-pinned under /v1.
+    humanURL: https://sifting.io/docs
+    baseURL: https://api.sifting.io
+    tags:
+      - Financial market data
+      - Stocks/equities
+      - Forex
+      - Cryptocurrency
+      - DeFi/on-chain
+      - Commodities
+      - SEC filings
+      - XBRL
+      - Fundamentals
+      - Fintech
+      - Quant/trading infrastructure
+      - Real-time streaming
+      - WebSocket
+      - FIX
+    properties:
+      - type: OpenAPI
+        url: https://sifting.io/openapi.yaml
+      - type: PostmanCollection
+        url: https://www.postman.com/siftingio/siftingio-market-data-api
+      - type: Documentation
+        url: https://sifting.io/docs
+  - name: SiftingIO Live Stream
+    description: >-
+      WebSocket streaming API for live market data, described by an AsyncAPI 3.0 contract. Also offers a documented FIX
+      API.
+    humanURL: https://sifting.io/docs/fix-api
+    baseURL: wss://stream.sifting.io/ws/v1
+    tags:
+      - Financial market data
+      - Stocks/equities
+      - Forex
+      - Cryptocurrency
+      - DeFi/on-chain
+      - Commodities
+      - SEC filings
+      - XBRL
+      - Fundamentals
+      - Fintech
+      - Quant/trading infrastructure
+      - Real-time streaming
+      - WebSocket
+      - FIX
+    properties:
+      - type: AsyncAPI
+        url: https://sifting.io/asyncapi.yaml
+      - type: Documentation
+        url: https://sifting.io/docs/fix-api
+  - name: SiftingIO MCP Server
+    description: >-
+      Hosted remote MCP server (Streamable HTTP) exposing tools for live prices, historical bars, discovery,
+      fundamentals, filings, market status, and the economic calendar. Auth via X-API-Key or Bearer.
+    humanURL: https://sifting.io/integrations/mcp
+    baseURL: https://mcp.sifting.io/mcp
+    tags:
+      - Financial market data
+      - Stocks/equities
+      - Forex
+      - Cryptocurrency
+      - DeFi/on-chain
+      - Commodities
+      - SEC filings
+      - XBRL
+      - Fundamentals
+      - Fintech
+      - Quant/trading infrastructure
+      - Real-time streaming
+      - WebSocket
+      - FIX
+    properties:
+      - type: MCPServer
+        url: https://mcp.sifting.io/mcp
+      - type: Documentation
+        url: https://sifting.io/integrations/mcp
+      - type: LLMsTxt
+        url: https://sifting.io/llms.txt
+      - type: LLMsTxt
+        url: https://sifting.io/llms-full.txt
+      - type: AgentSkill
+        url: https://github.com/SiftingIO/siftingio-ai-rules
+maintainers:
+  - FN: SaltingIO LLC
+    url: https://github.com/SiftingIO
+generated:
+  by: apis.io/add
+  model: claude-opus-4-8
+  confidence: 99
+  at: '2026-08-17T11:47:14.341Z'
