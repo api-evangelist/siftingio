@@ -1,0 +1,133 @@
+generated: '2026-08-17'
+method: searched
+docs: https://sifting.io/docs/quickstart
+source: >-
+  https://sifting.io/docs/quickstart (step 02, "API key & headers") upgrading the derived baseline
+  from openapi/_original/siftingio-openapi.yaml (components.securitySchemes) and
+  asyncapi/siftingio-asyncapi.yaml
+note: >-
+  Upgraded from derived to searched. The OpenAPI declares only the two REST schemes; the docs add
+  three facts the spec cannot express — the `sft_` key prefix, the WebSocket `?key=` query
+  parameter (the ONLY WebSocket auth method, because browsers cannot set headers on a WS
+  handshake), and the provider's own preference order (header over query, "query strings can
+  leak in logs"). The AsyncAPI document confirms the WebSocket method independently.
+
+summary:
+  types: [apiKey]
+  api_key_in: [header, query]
+  oauth2_flows: []
+  oidc: false
+  mtls: false
+  basic: false
+  bearer: false
+  model: single long-lived API key, one key across REST + WebSocket + FIX + all three SDKs
+  key_prefix: sft_
+  scoped_keys: true
+  scoped_keys_note: '"Scoped API keys" from Builder tier up; "scoped API keys per environment" on Enterprise.'
+  rotation_docs: null
+  rotation_note: 'Key generation is in the dashboard (https://sifting.io/dashboard); no public rotation/expiry policy is documented.'
+
+schemes:
+  - name: ApiKeyHeader
+    type: apiKey
+    in: header
+    parameter: X-API-Key
+    preferred: true
+    preference_reason: '"query strings can leak in logs" — https://sifting.io/docs/quickstart'
+    example: 'X-API-Key: sft_•••'
+    applies_to: all 37 REST operations (declared in top-level security[])
+    sources:
+      - openapi/siftingio-commodities-api-openapi.yml
+      - openapi/siftingio-convert-api-openapi.yml
+      - openapi/siftingio-crypto-api-openapi.yml
+      - openapi/siftingio-dex-api-openapi.yml
+      - openapi/siftingio-economiccalendar-api-openapi.yml
+      - openapi/siftingio-filers-api-openapi.yml
+      - openapi/siftingio-forex-api-openapi.yml
+      - openapi/siftingio-live-api-openapi.yml
+      - openapi/siftingio-markets-api-openapi.yml
+      - openapi/siftingio-signals-api-openapi.yml
+      - openapi/siftingio-stocks-api-openapi.yml
+  - name: ApiKeyQuery
+    type: apiKey
+    in: query
+    parameter: api_key
+    preferred: false
+    status: accepted fallback
+    example: '?api_key=sft_•••'
+    applies_to: all 37 REST operations
+    sources:
+      - openapi/siftingio-commodities-api-openapi.yml
+      - openapi/siftingio-convert-api-openapi.yml
+      - openapi/siftingio-crypto-api-openapi.yml
+      - openapi/siftingio-dex-api-openapi.yml
+      - openapi/siftingio-economiccalendar-api-openapi.yml
+      - openapi/siftingio-filers-api-openapi.yml
+      - openapi/siftingio-forex-api-openapi.yml
+      - openapi/siftingio-live-api-openapi.yml
+      - openapi/siftingio-markets-api-openapi.yml
+      - openapi/siftingio-signals-api-openapi.yml
+      - openapi/siftingio-stocks-api-openapi.yml
+  - name: WebSocketKeyQuery
+    type: apiKey
+    in: query
+    parameter: key
+    transport: wss
+    endpoint: wss://stream.sifting.io/ws/v1
+    example: 'wss://stream.sifting.io/ws/v1?key=sft_•••'
+    exclusive: true
+    exclusive_note: >-
+      The only WebSocket auth method. From the AsyncAPI info.description: "the API key is passed
+      as the `key` query parameter (the only WebSocket auth method)". The quickstart gives the
+      reason: browsers cannot set custom headers on the WS handshake.
+    sources: [asyncapi/siftingio-asyncapi.yaml, 'https://sifting.io/docs/quickstart']
+    in_openapi: false
+
+surfaces:
+  rest:
+    base_url: https://api.sifting.io
+    methods: [X-API-Key header, api_key query param]
+    gate_behaviour: >-
+      Enforced on EVERY /v1/* path before routing. Verified live: GET /v1/openapi.json returns
+      401 {"error":"missing api key (X-API-Key header or api_key query param)"} and a nonsense
+      path GET /v1/definitely-not-a-real-path-zzz with a bad key returns the identical
+      401 {"error":"invalid api key"}. A 401 from this host therefore says nothing about whether
+      the path exists.
+  websocket:
+    base_url: wss://stream.sifting.io/ws/v1
+    methods: [key query param]
+  fix:
+    docs: https://sifting.io/docs/fix-api
+    methods: [FIX 4.4 session credentials]
+    note: 'Session configuration and feed tiers documented in prose only; no machine-readable contract.'
+  mcp:
+    method: SIFTING_API_KEY environment variable
+    note: >-
+      The MCP server runs locally and reads the same key from the environment. It is not an
+      OAuth-protected remote server — there is no remote server. See mcp/siftingio-mcp.yml.
+
+errors:
+  - {status: 401, code: unauthorized, meaning: API key missing or invalid, retryable: false}
+  - {status: 403, code: null, meaning: 'Valid key, but the plan or tier does not include this market/venue — entitlement, not authentication', retryable: false}
+entitlement_note: >-
+  The 401/403 split matters for an agent: 401 is a credential problem and must not be retried;
+  403 is a PER-MARKET subscription boundary (a Crypto key cannot read Commodities) and must not be
+  retried either, but the remedy is commercial, not technical. See
+  plans/siftingio-plans-pricing.yml.
+
+account_level_auth:
+  note: >-
+    Distinct from API authentication. SSO and SAML 2.0, SCIM provisioning (where available) and
+    RBAC are offered for DASHBOARD access on Enterprise plans per https://sifting.io/llms.txt.
+    These govern who can log in and mint keys, not how an API call is authenticated. No OIDC or
+    OAuth discovery document is served — /.well-known/openid-configuration and
+    /.well-known/oauth-authorization-server returned 404 on all three hosts.
+
+signup: https://sifting.io/register
+login: https://sifting.io/login
+dashboard: https://sifting.io/dashboard
+free_key: 'Free tier per market, no card required — 10,000 REST calls/mo, 60 req/min, 1 month of history.'
+scopes_artifact: null
+scopes_note: >-
+  No scopes/ artifact: the API has no OAuth surface, so there are no scopes to enumerate.
+  Entitlement is expressed as per-market subscription tiers, not token scopes.

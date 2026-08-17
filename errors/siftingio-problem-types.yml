@@ -1,0 +1,159 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/docs/errors
+derived_from: openapi/_original/siftingio-openapi.yaml (components.responses.*, components.schemas.Error)
+format: custom-json
+format_note: >-
+  NOT RFC 9457. SiftingIO ships its own two-to-three field JSON envelope
+  ({"error","message","retry_after"}) with Content-Type application/json — not
+  application/problem+json, and with no `type` URI, `title`, `status` or `instance` member. The
+  provider's own guidance is that the snake_case `error` code, not the HTTP status, is the stable
+  identifier to switch on: "HTTP status maps loosely to category, the code is what stays stable."
+  That is a clear, documented, machine-switchable contract; it just is not the RFC.
+envelope:
+  content_type: application/json
+  schema: components.schemas.Error
+  required: [error]
+  fields:
+    - {name: error, type: string, description: 'Machine-readable snake_case error code, e.g. unknown_ticker. Switch on this.'}
+    - {name: message, type: string, description: Human-readable details.}
+    - {name: retry_after, type: number, description: Present on rate-limit errors.}
+  additional_properties: true
+  additional_properties_note: >-
+    Several errors enrich the body: section_not_found adds `available` (the sections that were
+    extracted), invalid_section adds `valid_options`, stale_snapshot adds `last_t` and
+    `server_now`.
+  example: '{"error":"error_code","message":"human-readable details"}'
+
+problems:
+  - status: 400
+    code: null
+    title: Bad request (raw message)
+    detail: Malformed query, invalid cursor, bad limit, missing required parameter.
+    openapi_response: BadRequest
+    note: 'The docs record the 400 code as "(raw message)" — no stable snake_case code is issued for the generic case.'
+  - status: 400
+    code: invalid_section
+    title: Invalid filing section
+    detail: ':section not in the allowed list. Body includes `valid_options`.'
+    remediation: Read `valid_options` from the body, or call getFilingSections first.
+    source_operation: openapi/siftingio-stocks-api-openapi.yml#getFilingSection
+  - status: 400
+    code: invalid_accession_format
+    title: Invalid accession number format
+    detail: "Accession number didn't match the dashed/undashed shape."
+    remediation: 'Pass either 0000320193-25-000089 or 000032019325000089.'
+    source_operation: openapi/siftingio-stocks-api-openapi.yml#getFiling
+  - status: 400
+    code: invalid_date_range
+    title: Invalid date range
+    detail: 'Economic calendar: `to` must be strictly after `from`, range capped at 365 days.'
+    source_operation: openapi/siftingio-economiccalendar-api-openapi.yml#getEconomicCalendar
+  - status: 401
+    code: unauthorized
+    title: Unauthorized
+    detail: API key missing or invalid.
+    openapi_response: Unauthorized
+    remediation: 'Send X-API-Key (preferred) or ?api_key=. Applies to every /v1/* path — the key gate runs before routing.'
+    observed_live: 'GET https://api.sifting.io/v1/openapi.json -> 401 {"error":"missing api key (X-API-Key header or api_key query param)"}'
+  - status: 403
+    code: null
+    title: Forbidden (raw message)
+    detail: "Authenticated but not entitled — your subscription doesn't include this product or market."
+    openapi_response: Forbidden
+    remediation: 'Per-market entitlement, not a key problem. See plans/siftingio-plans-pricing.yml.'
+  - status: 404
+    code: unknown_ticker
+    title: Unknown ticker
+    detail: ":ticker not in the SEC's US ticker registry."
+    remediation: Resolve the symbol with searchStocks first.
+  - status: 404
+    code: unknown_filer
+    title: Unknown filer
+    detail: ':filer (ticker or CIK) not found.'
+    source_operation: openapi/siftingio-filers-api-openapi.yml#getFilerHoldings
+  - status: 404
+    code: filing_not_found
+    title: Filing not found
+    detail: "Specific accession isn't in this filer's recent-filings window."
+  - status: 404
+    code: no_13f_filings
+    title: No 13F filings
+    detail: Filer has never filed 13F-HR.
+  - status: 404
+    code: not_found
+    title: Not found
+    detail: Concept / period / unit combination has no data, or symbol absent from live feed.
+    openapi_response: NotFound
+  - status: 404
+    code: section_not_found
+    title: Filing section not found
+    detail: "Requested filing section couldn't be extracted. Body includes `available` (sections that were extracted)."
+  - status: 404
+    code: insufficient_filings
+    title: Insufficient filings
+    detail: 'Risk-factors diff needs at least 2 10-Ks; this filer has fewer on record.'
+    source_operation: openapi/siftingio-stocks-api-openapi.yml#getRiskFactorsDiff
+  - status: 406
+    code: gzip_required
+    title: Gzip required
+    detail: 'Heavy endpoint called without Accept-Encoding: gzip.'
+    openapi_response: GzipRequired
+    remediation: 'Send Accept-Encoding: gzip. Required on the screener, both financials endpoints, all historical-bars endpoints and the market snapshot. Declared in the spec as a REQUIRED header parameter (components.parameters.AcceptEncodingGzip).'
+    agent_relevance: >-
+      The single most likely first-call failure for an agent hand-rolling HTTP. Most HTTP clients
+      add the header automatically; raw fetch/curl without it does not.
+  - status: 422
+    code: risk_factors_unavailable
+    title: Risk factors unavailable
+    detail: "Item 1A couldn't be extracted from one or both 10-K filings being diffed."
+  - status: 422
+    code: insufficient_history
+    title: Insufficient history
+    detail: Not enough bars to compute a technical signal for the requested symbol and interval.
+    openapi_response: InsufficientHistory
+    source_operation: openapi/siftingio-signals-api-openapi.yml#getLiveSignal
+  - status: 429
+    code: rate_limit_exceeded
+    title: Rate limit exceeded
+    detail: 'Per-tier rate budget exhausted, inspect Retry-After.'
+    openapi_response: TooManyRequests
+    headers: [Retry-After]
+    remediation: 'Back off using Retry-After; self-throttle on X-RateLimit-Remaining. See rate-limits/siftingio-rate-limits.yml.'
+  - status: 502
+    code: upstream_error
+    title: Upstream error
+    detail: Filings source returned a non-success status. Retry shortly.
+    retryable: true
+  - status: 502
+    code: malformed_upstream
+    title: Malformed upstream response
+    detail: "Filings source returned an invalid payload, or live snapshot couldn't be parsed."
+    retryable: true
+  - status: 503
+    code: stale_snapshot
+    title: Stale snapshot
+    detail: 'Live snapshot older than the configured threshold (default 5s). Body carries last_t and server_now.'
+    openapi_response: ServiceUnavailable
+    retryable: true
+    agent_relevance: >-
+      A deliberate freshness guarantee rather than a fault — the API refuses to serve a live price
+      it considers stale, and hands back the two timestamps so a caller can decide.
+  - status: 503
+    code: upstream_rate_limited
+    title: Upstream rate limited
+    detail: Filings source throttled our pipeline. Retry shortly.
+    retryable: true
+
+summary:
+  documented_codes: 21
+  openapi_response_components: 9
+  statuses: [400, 401, 403, 404, 406, 422, 429, 502, 503]
+  retryable_codes: [rate_limit_exceeded, upstream_error, malformed_upstream, stale_snapshot, upstream_rate_limited]
+  rfc9457: false
+  stable_identifier: the snake_case `error` field
+  coverage_note: >-
+    Every one of the 37 OpenAPI operations declares 401 and 429; most declare 404; the gzip-heavy
+    ones declare 406. The docs page carries 502/503 codes that the OpenAPI does not model as
+    response components (the spec has ServiceUnavailable but no 502 response), so the docs are
+    the broader source of truth on server-side failures.

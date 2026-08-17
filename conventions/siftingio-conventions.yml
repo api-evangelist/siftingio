@@ -1,0 +1,147 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/docs/quickstart
+also:
+  - https://sifting.io/docs/errors
+  - openapi/_original/siftingio-openapi.yaml
+  - asyncapi/siftingio-asyncapi.yaml
+  - https://github.com/SiftingIO/siftingio-ai-rules/blob/main/AGENTS.md
+note: >-
+  SiftingIO publishes its cross-cutting semantics as a named "Conventions" section on the
+  quickstart page — "Predictable rules that hold across every product, every endpoint, every
+  payload" — covering versioning, identifiers, dates, units, pagination and compression, and a
+  separate operations page for errors and rate limits. Everything below is from those pages or
+  from the spec; nothing is inferred.
+
+authentication:
+  style: api-key
+  rest_primary: {header: X-API-Key, note: preferred — "query strings can leak in logs"}
+  rest_fallback: {query_param: api_key}
+  websocket: {query_param: key, note: 'Query string only, since browsers cannot set custom headers on the WS handshake.'}
+  key_prefix: sft_
+  key_prefix_source: 'https://sifting.io/docs/quickstart — credentials block shows "X-API-Key: sft_•••"'
+  scope: One key works across all three SDKs, the raw REST endpoints and the WebSocket stream.
+  scoped_keys: 'Available from Builder tier up ("Scoped API keys"); per-environment scoping on Enterprise.'
+  detail: authentication/siftingio-authentication.yml
+
+idempotency:
+  mechanism: none
+  idempotency_key_header: null
+  retention: null
+  retry_safety: safe-by-method
+  detail: >-
+    All 37 published operations are HTTP GET. There is no POST, PUT, PATCH or DELETE anywhere in
+    the contract, so every call is idempotent by HTTP method and safe to retry without a
+    de-duplication key. SiftingIO therefore offers no Idempotency-Key header, and correctly so —
+    a read-only data plane has nothing to de-duplicate.
+  pointer_decision: >-
+    NO `Idempotency` pointer is emitted in apis.yml. The provider publishes no idempotency
+    contract, and asserting one would be a fabrication. Recorded here so a later round does not
+    re-litigate it: if SiftingIO ever ships a write surface (the /ops/v1 control plane is named
+    but explicitly out of scope of the public document), re-check for an idempotency key then.
+  write_surface_note: >-
+    'This document describes the data plane only. Account, billing, and auth (the `/ops/v1`
+    control plane) are out of scope.' — openapi info.description. The control plane is not
+    published, so its write semantics are unknown.
+
+pagination:
+  style: opaque-cursor
+  request_params:
+    - {name: limit, in: query, default: 50, max: 200, note: 'default 10, max 25 on /insiders'}
+    - {name: cursor, in: query, description: "Opaque pagination cursor from a previous response's meta.next_cursor"}
+    - {name: order, in: query, enum: [asc, desc], default: asc, note: 'Commodities and forex historical bars ONLY; every other historical route is ascending-only. `desc` anchors the first page at the most recent bar, so fetching the latest N costs one request instead of paging the whole window.'}
+  response_fields:
+    - {field: meta.next_cursor, note: 'Cursor for the next page; null/omitted on the final page.'}
+    - {field: meta.total, note: The count.}
+    - {field: meta.as_of, note: Snapshot timestamp (RFC 3339).}
+  meta_schemas: [ListMeta, BarsMeta, SignalMeta]
+  termination_rule: 'Stop when meta.next_cursor is null or absent.'
+  sdk_helpers: 'The Python SDK ships auto_paginate / aauto_paginate; the MCP tools add a max_items input that auto-pages server-side.'
+
+versioning:
+  scheme: uri-path
+  current: v1
+  detail: 'Every endpoint is pinned to v1, baked into the path (e.g. /v1/fnd/stocks/search).'
+  compatibility_promise: 'Within a version, fields are additive, never removed.'
+  breaking_change_policy: 'Breaking changes ship under a new version with a deprecation window.'
+  header_versioning: false
+  detail_ref: lifecycle/siftingio-lifecycle.yml
+
+identifiers:
+  tickers: case-insensitive (AAPL = aapl)
+  cik: 10-digit zero-padded strings ("0000320193")
+  accession_numbers:
+    output: dashed ("0000320193-25-000089")
+    input: accepted in either dashed or undashed form
+  symbols_note: 'Symbol catalog published at https://sifting.io/symbols; venue + symbol on live routes, chain + pair on DEX TVL, chain + address on wallets.'
+
+dates_and_timestamps:
+  standard: ISO 8601
+  date_only_fields: [filed_at, period_end, transaction_date]
+  date_only_format: YYYY-MM-DD
+  timestamp_fields: [accepted_at, as_of]
+  timestamp_format: YYYY-MM-DDTHH:MM:SSZ
+  tick_timestamps: {field: t, format: int64 Unix epoch milliseconds}
+  timezone: UTC throughout
+
+units_and_money:
+  rule: XBRL data carries the unit explicitly.
+  shape: '{ value, unit }'
+  units: [USD, 'USD/shares (EPS)', shares, 'pure (dimensionless ratios)']
+
+compression:
+  header: 'Accept-Encoding: gzip'
+  default_behaviour: 'Send it and every /fnd/* and /hist/* response comes back gzipped; most HTTP clients add the header for you.'
+  required_on:
+    - full XBRL bundles (getFinancials)
+    - single-concept queries (getFinancialConcept)
+    - screener queries (getScreener)
+    - historical bars for stocks, forex and crypto (getStockBars, getForexBars, getCryptoBars)
+    - market snapshot (getSnapshot)
+  failure: '406 gzip_required'
+  in_spec: 'Modelled as a required header parameter — components.parameters.AcceptEncodingGzip, enum [gzip].'
+
+field_expansion:
+  supported: false
+  note: No expand / sparse-fieldset / field-selection parameter is published.
+
+metadata:
+  supported: false
+  note: >-
+    No user-writable metadata surface — the API is read-only. `meta` in a response is the
+    provider's own pagination/freshness envelope, not customer metadata.
+
+request_tracing:
+  request_id_header: null
+  note: >-
+    No X-Request-Id / correlation-id header is documented on requests or responses, and none
+    appears in the OpenAPI. This is a real gap for an agent debugging a failed call: there is no
+    published handle to quote to support.
+
+error_envelope:
+  format: custom-json (not RFC 9457)
+  shape: '{"error":"<snake_case_code>","message":"<human readable>","retry_after":<seconds, rate-limit only>}'
+  switch_on: the `error` field
+  detail: errors/siftingio-problem-types.yml
+
+rate_limit_signaling:
+  headers: [X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After]
+  exhaustion: 429 rate_limit_exceeded
+  detail: rate-limits/siftingio-rate-limits.yml
+
+streaming:
+  protocol: WebSocket (wss://stream.sifting.io/ws/v1)
+  spec: asyncapi/siftingio-asyncapi.yaml
+  control_frames: [subscribe, unsubscribe, ping]
+  server_frames: [ack, pong, tick, tvl, error]
+  encoding: JSON text frames
+  auth: '?key= query parameter (the only WebSocket auth method)'
+  also: 'FIX 4.4 market-data feed documented at https://sifting.io/docs/fix-api'
+
+cross_links:
+  authentication: authentication/siftingio-authentication.yml
+  errors: errors/siftingio-problem-types.yml
+  rate_limits: rate-limits/siftingio-rate-limits.yml
+  lifecycle: lifecycle/siftingio-lifecycle.yml
+  plans: plans/siftingio-plans-pricing.yml
+  data_model: data-model/siftingio-data-model.yml

@@ -1,0 +1,159 @@
+generated: '2026-08-17'
+method: derived
+source: >-
+  mcp/siftingio-mcp.yml (tool names + backing client calls read from
+  github.com/SiftingIO/siftingio-mcp src/tools/**/*.ts) bound to operationIds in
+  openapi/_original/siftingio-openapi.yaml and the refined per-tag specs; streaming tools
+  bound to asyncapi/siftingio-asyncapi.yaml.
+note: >-
+  Confidence is high across the board because the binding was read from the server's own source
+  code, not inferred from tool names: each tool's handler calls a typed SDK method
+  (getClient().<resource>.<method>()) and each tool file carries a docstring naming the REST
+  path prefix it wraps (e.g. "/** Register `/v1/last/*` live snapshot tools. */"). Every
+  operationId below was grepped in the spec; none were invented. Each bound tool inherits its
+  real inputSchema from that operation's parameters block.
+
+surfaces:
+  openapi:
+    file: openapi/_original/siftingio-openapi.yaml
+    url: https://sifting.io/openapi.yaml
+    version: 3.1.0
+    operations: 37
+    gated: false
+    note: Public, anonymous, HTTP 200. Refined into 11 per-tag specs under openapi/.
+  asyncapi:
+    file: asyncapi/siftingio-asyncapi.yaml
+    url: https://sifting.io/asyncapi.yaml
+    version: 3.0.0
+    channels: 1
+    gated: false
+  mcp:
+    server: io.sifting/mcp
+    url: null
+    gated: n/a
+    note: >-
+      NO hosted endpoint — local stdio only (npx -y siftingio-mcp). tools/list could not be
+      called live; the tool set was read from source instead. See deployment_evidence in
+      mcp/siftingio-mcp.yml.
+  graphql:
+    endpoint: null
+    note: 'Probed https://api.sifting.io/graphql and https://sifting.io/graphql — both 404. No GraphQL surface.'
+
+crosswalk:
+  - {tool: last_trade, category: live, rest: [getLastTrade], binding: rest, confidence: high, note: 'getClient().last.trade(venue, symbol) -> GET /v1/last/trade/{venue}/{symbol}'}
+  - {tool: last_quote, category: live, rest: [getLastQuote], binding: rest, confidence: high}
+  - {tool: last_tvl, category: live, rest: [getLastTVL], binding: rest, confidence: high, note: 'chain + pair, not venue + symbol'}
+  - {tool: crypto_bars, category: historical, rest: [getCryptoBars], binding: rest, confidence: high}
+  - {tool: forex_bars, category: historical, rest: [getForexBars], binding: rest, confidence: high}
+  - {tool: stocks_bars, category: historical, rest: [getStockBars], binding: rest, confidence: high}
+  - {tool: stocks_search, category: discovery, rest: [searchStocks], binding: rest, confidence: high}
+  - {tool: stocks_profile, category: fundamentals, rest: [getCompanyProfile], binding: rest, confidence: high}
+  - {tool: stocks_screener, category: fundamentals, rest: [getScreener], binding: rest, confidence: high, note: 'Requires Accept-Encoding: gzip; 406 gzip_required otherwise. The SDK sets it.'}
+  - {tool: stocks_filings, category: sec-filings, rest: [listFilings], binding: rest, confidence: high, note: 'Tool adds a max_items input the REST op does not have — it auto-pages meta.next_cursor server-side in the tool handler.'}
+  - {tool: stocks_filing, category: sec-filings, rest: [getFiling], binding: rest, confidence: high}
+  - {tool: stocks_sections, category: sec-filings, rest: [getFilingSections], binding: rest, confidence: high}
+  - {tool: stocks_section, category: sec-filings, rest: [getFilingSection], binding: rest, confidence: high}
+  - {tool: stocks_risk_factors_diff, category: sec-filings, rest: [getRiskFactorsDiff], binding: rest, confidence: high}
+  - {tool: stocks_events, category: sec-filings, rest: [listEvents], binding: rest, confidence: high, note: 'Adds max_items auto-pagination.'}
+  - {tool: stocks_financials, category: financials, rest: [getFinancials], binding: rest, confidence: high, note: 'gzip required.'}
+  - {tool: stocks_financial_concept, category: financials, rest: [getFinancialConcept], binding: rest, confidence: high, note: 'gzip required.'}
+  - {tool: stocks_ratios, category: financials, rest: [getRatios], binding: rest, confidence: high}
+  - {tool: stocks_earnings, category: financials, rest: [listEarnings], binding: rest, confidence: high, note: 'Adds max_items auto-pagination.'}
+  - {tool: stocks_insiders, category: ownership, rest: [listInsiders], binding: rest, confidence: high, note: 'Adds max_items auto-pagination. Note the REST op has a lower page cap: limit default 10, max 25.'}
+  - {tool: stocks_ownership, category: ownership, rest: [listOwnership], binding: rest, confidence: high, note: 'Adds max_items auto-pagination.'}
+  - {tool: stocks_compensation, category: ownership, rest: [listCompensation], binding: rest, confidence: high, note: 'Adds max_items auto-pagination.'}
+  - {tool: filers_holdings, category: ownership, rest: [getFilerHoldings], binding: rest, confidence: high}
+  - {tool: economic_calendar_list, category: reference, rest: [getEconomicCalendar], binding: rest, confidence: high}
+  - {tool: markets_list, category: reference, rest: [listMarkets], binding: rest, confidence: high}
+  - {tool: markets_status_all, category: reference, rest: [getAllMarketStatus], binding: rest, confidence: high}
+  - {tool: markets_status, category: reference, rest: [getMarketStatus], binding: rest, confidence: high}
+  - {tool: markets_hours, category: reference, rest: [getMarketHours], binding: rest, confidence: high}
+  - {tool: markets_calendar, category: reference, rest: [getMarketCalendar], binding: rest, confidence: high}
+  - {tool: dex_wallet, category: on-chain, rest: [getWalletPortfolio], binding: rest, confidence: high}
+
+mcp_only:
+  - tool: ws_subscribe
+    reason: >-
+      Wraps the AsyncAPI `subscribe` send-operation on wss://stream.sifting.io/ws/v1. No REST
+      operation exists — subscribing is a stateful WebSocket frame, not a request.
+    binding: asyncapi
+    asyncapi_operation: subscribe
+  - tool: ws_unsubscribe
+    reason: Wraps the AsyncAPI `unsubscribe` send-operation. No REST equivalent.
+    binding: asyncapi
+    asyncapi_operation: unsubscribe
+  - tool: ws_poll
+    reason: >-
+      Server-side composite with no protocol equivalent on either surface. The MCP server keeps
+      a local ring buffer of received tick frames and this tool drains it by sequence number
+      (afterSeq). Exists because MCP is request/response and cannot push a stream to the model.
+    binding: composite
+  - tool: ws_collect
+    reason: >-
+      Server-side composite: opens a subscription, blocks for duration_ms (default 3000), and
+      returns up to `max` (default 50) buffered ticks in one response. A synchronous window over
+      an asynchronous stream — an MCP-shaped affordance that neither REST nor the WebSocket
+      protocol offers.
+    binding: composite
+  - tool: ws_status
+    reason: Reports the local WebSocket manager's connection state. Client-side state, not a provider surface.
+    binding: composite
+  - tool: ws_disconnect
+    reason: Tears down the local WebSocket connection. Client-side state, not a provider surface.
+    binding: composite
+
+rest_only:
+  - capability: Commodities historical bars
+    rest: [getCommodityBars]
+    path: /v1/hist/commodities/{symbol}/bars
+    note: >-
+      THE MOST CONSEQUENTIAL GAP. https://sifting.io/llms.txt tells an agent the MCP server's
+      36 tools cover "commodities", but no commodities tool exists in the server source —
+      src/tools/ has crypto.ts, forex.ts, last.ts, ws.ts, stocks.ts, filers.ts, economic.ts,
+      dex.ts and markets.ts, and nothing else. An agent asking for gold or WTI history over MCP
+      has no tool to call; it can only get a live snapshot via last_trade/last_quote on a
+      commodities venue. Reachable over REST and over all three SDKs.
+  - capability: Previous daily close
+    rest: [getLastClose]
+    path: /v1/last/close/{venue}/{symbol}
+    note: >-
+      Shipped 2026-07-01 per the changelog; the MCP server's last release is 2026-07-11 and does
+      not wrap it. Only last_trade, last_quote and last_tvl of the four /v1/last/* operations
+      have tools.
+  - capability: Technical signals (live + history)
+    rest: [getLiveSignal, getSignalHistory]
+    paths: ['/v1/last/signals/{venue}/{symbol}', '/v1/hist/{venue}/{symbol}/signals']
+    note: >-
+      Shipped 2026-08-14, a month after the MCP server's 1.0.2 release (2026-07-11). Not yet
+      exposed as tools. RSI/MACD/moving-average readings are REST-only for agents today.
+  - capability: Whole-market snapshot
+    rest: [getSnapshot]
+    path: /v1/snapshot/{venue}
+    note: 'Returns the consensus state of an entire venue in one call. gzip required. No tool.'
+  - capability: Currency and token conversion
+    rest: [convertAmount]
+    path: '/v1/convert/{from}/{to}'
+    note: 'Live FX/crypto conversion. Documented at /docs/convert. No tool.'
+  - capability: DEX historical bars
+    rest: [getDexBars]
+    path: '/v1/hist/dex/{symbol}/bars'
+    note: >-
+      dex_wallet covers wallet portfolios but there is no tool for DEX pool OHLCV history.
+
+coverage:
+  mcp_tools_named: 36
+  mcp_tools_bound_to_rest: 30
+  mcp_tools_bound_to_asyncapi: 2
+  mcp_tools_composite_only: 4
+  rest_operations_total: 37
+  rest_operations_with_a_tool: 30
+  rest_operations_without_a_tool: 7
+  rest_coverage_pct: 81
+  graphql_fields: 0
+  note: >-
+    The three surfaces are close to congruent on fundamentals and bars, and diverge at both
+    edges: the WebSocket stream contributes six MCP tools with no REST analogue, while seven REST
+    operations — every one of them shipped or extended in the last two months — have no tool.
+    The gap is a release-cadence gap, not a design decision: the API shipped signals (Aug 14),
+    previous-close (Jul 1) and commodities history (Jun 18) after or around the MCP server's
+    1.0.2 cut on Jul 11.

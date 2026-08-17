@@ -1,0 +1,375 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Signals API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Signals
+  description: Technical-analysis signals (live and historical) across stocks, forex, crypto, and commodities.
+paths:
+  /v1/last/signals/{venue}/{symbol}:
+    get:
+      tags:
+      - Signals
+      operationId: getLiveSignal
+      summary: Live technical signal
+      description: 'Current technical-analysis signal for a stock, FX pair, crypto asset, or commodity: a decision-ready summary (strong_sell to strong_buy) with a score from -1 to +1, plus the oscillator and moving-average indicators behind it, each with its value(s) and vote. Indicators still in warmup are omitted, so the vote counts sum to the rows returned. `price.bar_status` is `forming` when a live tick is folded into the current bar, `closed` when the last settled bar is used.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/VenueSignals'
+      - $ref: '#/components/parameters/Symbol'
+      - name: interval
+        in: query
+        description: Bar interval the signal is computed on. Default 1h.
+        schema:
+          type: string
+          enum:
+          - 1m
+          - 5m
+          - 15m
+          - 30m
+          - 1h
+          - 1d
+          - 1w
+          - 1mo
+          default: 1h
+      responses:
+        '200':
+          description: Live technical signal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveSignalResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InsufficientHistory'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/hist/{venue}/{symbol}/signals:
+    get:
+      tags:
+      - Signals
+      operationId: getSignalHistory
+      summary: Historical technical-signal series
+      description: 'The technical-analysis signal as a time series, one point per bar: summary, score, close, and any discrete events (golden_cross, death_cross, macd_cross_up, macd_cross_down) that fired on that bar. Same computation as the live signal, so a historical point is identical to the one that fired live. `t` is the bar-open time in Unix epoch milliseconds, the same as the `/v1/hist/*` bars routes.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/VenueSignals'
+      - $ref: '#/components/parameters/Symbol'
+      - name: interval
+        in: query
+        description: Bar interval each point is computed on. Default 1d.
+        schema:
+          type: string
+          enum:
+          - 1m
+          - 5m
+          - 15m
+          - 30m
+          - 1h
+          - 1d
+          - 1w
+          - 1mo
+          default: 1d
+      - name: limit
+        in: query
+        description: Return the most recent N points (newest last).
+        schema:
+          type: integer
+          default: 100
+          maximum: 1000
+      responses:
+        '200':
+          description: Historical signal series.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InsufficientHistory'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  parameters:
+    Symbol:
+      name: symbol
+      in: path
+      required: true
+      description: Symbol, normalized to the venue's canonical form.
+      schema:
+        type: string
+    VenueSignals:
+      name: venue
+      in: path
+      required: true
+      description: Market venue for technical signals.
+      schema:
+        type: string
+        enum:
+        - stocks
+        - crypto
+        - forex
+        - commodities
+  schemas:
+    SignalGroup:
+      type: object
+      description: One indicator group (oscillators or moving averages) with its own verdict.
+      properties:
+        signal:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Group score, -1 to +1.
+        indicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalIndicator'
+    LiveSignalResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/LiveSignal'
+        meta:
+          $ref: '#/components/schemas/SignalMeta'
+    SignalEvent:
+      type: string
+      description: A discrete marker that fired on a bar.
+      enum:
+      - golden_cross
+      - death_cross
+      - macd_cross_up
+      - macd_cross_down
+    SignalPoint:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        close:
+          type: number
+        summary:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Score for the bar, -1 to +1.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalEvent'
+    SignalSummary:
+      type: object
+      properties:
+        signal:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Overall score, -1 to +1.
+        counts:
+          $ref: '#/components/schemas/SignalCounts'
+    SignalMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        symbol:
+          type: string
+        interval:
+          type: string
+    SignalHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalPoint'
+        meta:
+          $ref: '#/components/schemas/SignalMeta'
+    SignalVerdict:
+      type: string
+      description: Decision-ready label. `score` runs -1 (strong_sell) to +1 (strong_buy).
+      enum:
+      - strong_sell
+      - sell
+      - neutral
+      - buy
+      - strong_buy
+    SignalVote:
+      type: string
+      description: A single indicator's vote.
+      enum:
+      - buy
+      - neutral
+      - sell
+    SignalCounts:
+      type: object
+      description: Vote tally across every indicator returned.
+      properties:
+        buy:
+          type: integer
+        neutral:
+          type: integer
+        sell:
+          type: integer
+    SignalPrice:
+      type: object
+      properties:
+        close:
+          type: number
+        bar_status:
+          type: string
+          description: '`forming` (live tick folded into the current bar) or `closed` (last settled bar).'
+          enum:
+          - forming
+          - closed
+    SignalIndicator:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Indicator name and parameters, e.g. RSI(14).
+        value:
+          type: number
+          description: Primary reading. Omitted on rows reported via component fields only.
+        signal_line:
+          type: number
+          description: MACD signal line (MACD rows only).
+        k:
+          type: number
+          description: Stochastic %K (Stochastic rows only).
+        d:
+          type: number
+          description: Stochastic %D (Stochastic rows only).
+        vote:
+          $ref: '#/components/schemas/SignalVote'
+    LiveSignal:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/SignalSummary'
+        oscillators:
+          $ref: '#/components/schemas/SignalGroup'
+        moving_averages:
+          $ref: '#/components/schemas/SignalGroup'
+        price:
+          $ref: '#/components/schemas/SignalPrice'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InsufficientHistory:
+      description: Not enough bars to compute a signal for this symbol and interval.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

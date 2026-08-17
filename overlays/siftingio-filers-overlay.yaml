@@ -1,0 +1,43 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for SiftingIO Market Data Filers API
+  version: 1.0.0
+extends: openapi/siftingio-filers-api-openapi.yml
+actions:
+- target: $.info
+  update:
+    x-apievangelist-provider: siftingio
+    x-apievangelist-provider-name: SiftingIO
+    x-apievangelist-spec-source: https://sifting.io/openapi.yaml
+    x-apievangelist-spec-source-verified: '2026-08-17'
+    x-apievangelist-artifacts:
+      authentication: authentication/siftingio-authentication.yml
+      conventions: conventions/siftingio-conventions.yml
+      errors: errors/siftingio-problem-types.yml
+      rate-limits: rate-limits/siftingio-rate-limits.yml
+      plans: plans/siftingio-plans-pricing.yml
+      lifecycle: lifecycle/siftingio-lifecycle.yml
+      data-model: data-model/siftingio-data-model.yml
+      mcp: mcp/siftingio-mcp.yml
+      tool-crosswalk: mcp/siftingio-tool-crosswalk.yml
+      skills: skills/_index.yml
+    x-apievangelist-tags:
+    - Filers
+- target: $
+  update:
+    x-apievangelist-conventions:
+      auth: API key via X-API-Key header (preferred) or api_key query param; sft_ prefix
+      pagination: opaque cursor — ?limit (default 50, max 200) + ?cursor from meta.next_cursor; terminates
+        when next_cursor is null/absent
+      versioning: uri-path v1; fields additive within a version; breaking changes ship under a new version
+        with a deprecation window
+      timestamps: ISO 8601 UTC — dates YYYY-MM-DD, timestamps YYYY-MM-DDTHH:MM:SSZ, tick t is int64 epoch
+        ms
+      error_envelope: '{"error":"<snake_case_code>","message":"...","retry_after":<n>} — application/json,
+        NOT RFC 9457; switch on `error`'
+      rate_limit_headers:
+      - X-RateLimit-Limit
+      - X-RateLimit-Remaining
+      - Retry-After
+      idempotency: not applicable — every operation is an HTTP GET, idempotent by method; no Idempotency-Key
+        contract exists

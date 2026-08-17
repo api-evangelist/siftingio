@@ -1,0 +1,1197 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Stocks API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Stocks
+  description: US-equity fundamentals (SEC) and historical bars.
+paths:
+  /v1/fnd/stocks/search:
+    get:
+      tags:
+      - Stocks
+      operationId: searchStocks
+      summary: Ticker / company search
+      parameters:
+      - name: q
+        in: query
+        required: true
+        description: Search string (ticker, company name, or CIK substring).
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: Max results.
+        schema:
+          type: integer
+          default: 25
+          maximum: 100
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockSearchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/screener/{concept}/{period}:
+    get:
+      tags:
+      - Stocks
+      operationId: getScreener
+      summary: Cross-sectional screener (gzip required)
+      description: 'One XBRL concept/period across many companies. Requires `Accept-Encoding: gzip`.'
+      parameters:
+      - $ref: '#/components/parameters/AcceptEncodingGzip'
+      - name: concept
+        in: path
+        required: true
+        description: XBRL concept tag, e.g. `Assets`, `NetIncomeLoss`.
+        schema:
+          type: string
+      - name: period
+        in: path
+        required: true
+        description: Reporting period, e.g. `CY2024Q1`, `CY2024FY`.
+        schema:
+          type: string
+      - name: taxonomy
+        in: query
+        schema:
+          type: string
+          default: us-gaap
+      - name: unit
+        in: query
+        schema:
+          type: string
+          default: USD
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Screener rows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenerResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '406':
+          $ref: '#/components/responses/GzipRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/profile:
+    get:
+      tags:
+      - Stocks
+      operationId: getCompanyProfile
+      summary: Company profile
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      responses:
+        '200':
+          description: Company profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/filings:
+    get:
+      tags:
+      - Stocks
+      operationId: listFilings
+      summary: SEC filings
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - name: form
+        in: query
+        description: Comma-separated exact form types, e.g. `10-K,10-Q`.
+        schema:
+          type: string
+      - name: from
+        in: query
+        description: Lower bound on filed date (YYYY-MM-DD).
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        description: Upper bound on filed date (YYYY-MM-DD).
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated filings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/filings/{accession}:
+    get:
+      tags:
+      - Stocks
+      operationId: getFiling
+      summary: Filing detail
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Accession'
+      responses:
+        '200':
+          description: Filing detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilingDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/filings/{accession}/sections:
+    get:
+      tags:
+      - Stocks
+      operationId: getFilingSections
+      summary: All filing sections
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Accession'
+      responses:
+        '200':
+          description: Extracted sections.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilingSections'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/filings/{accession}/sections/{section}:
+    get:
+      tags:
+      - Stocks
+      operationId: getFilingSection
+      summary: One filing section
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Accession'
+      - name: section
+        in: path
+        required: true
+        description: Section code, e.g. `business`, `risk-factors`, `mda`, `legal-proceedings`, `market-risk`.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Section text.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilingSectionDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/risk-factors-diff:
+    get:
+      tags:
+      - Stocks
+      operationId: getRiskFactorsDiff
+      summary: Year-over-year risk-factor diff
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      responses:
+        '200':
+          description: Item 1A diff between the two most recent 10-Ks.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskFactorsDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/ratios:
+    get:
+      tags:
+      - Stocks
+      operationId: getRatios
+      summary: Fundamental ratios
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      responses:
+        '200':
+          description: Latest ratios plus history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ratios'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/earnings:
+    get:
+      tags:
+      - Stocks
+      operationId: listEarnings
+      summary: Earnings releases
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated earnings-release filings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventFilingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/financials:
+    get:
+      tags:
+      - Stocks
+      operationId: getFinancials
+      summary: Full XBRL financials (gzip required)
+      description: 'Full XBRL concept bundle for a company. Requires `Accept-Encoding: gzip`.'
+      parameters:
+      - $ref: '#/components/parameters/AcceptEncodingGzip'
+      - $ref: '#/components/parameters/Ticker'
+      responses:
+        '200':
+          description: XBRL financials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Financials'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/GzipRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/financials/{concept}:
+    get:
+      tags:
+      - Stocks
+      operationId: getFinancialConcept
+      summary: One XBRL concept (gzip required)
+      description: 'One XBRL concept''s full time series. Requires `Accept-Encoding: gzip`.'
+      parameters:
+      - $ref: '#/components/parameters/AcceptEncodingGzip'
+      - $ref: '#/components/parameters/Ticker'
+      - name: concept
+        in: path
+        required: true
+        description: XBRL concept tag, e.g. `Assets`.
+        schema:
+          type: string
+      - name: taxonomy
+        in: query
+        schema:
+          type: string
+          default: us-gaap
+      responses:
+        '200':
+          description: Concept time series.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialConcept'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/GzipRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/insiders:
+    get:
+      tags:
+      - Stocks
+      operationId: listInsiders
+      summary: Insider transactions (Form 3/4/5)
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Cursor'
+      - name: limit
+        in: query
+        description: Page size (lower cap due to XML parsing).
+        schema:
+          type: integer
+          default: 10
+          maximum: 25
+      responses:
+        '200':
+          description: Paginated insider transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsidersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/ownership:
+    get:
+      tags:
+      - Stocks
+      operationId: listOwnership
+      summary: Schedule 13D/13G ownership filings
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated ownership filings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/events:
+    get:
+      tags:
+      - Stocks
+      operationId: listEvents
+      summary: 8-K material events
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - name: item
+        in: query
+        description: Filter by 8-K item code, e.g. `2.02`.
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated 8-K events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventFilingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/stocks/{ticker}/compensation:
+    get:
+      tags:
+      - Stocks
+      operationId: listCompensation
+      summary: DEF 14A proxy / compensation filings
+      parameters:
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated proxy filings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompensationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/hist/stocks/{ticker}/bars:
+    get:
+      tags:
+      - Stocks
+      operationId: getStockBars
+      summary: Historical stock OHLCV bars (gzip required)
+      description: 'Requires `Accept-Encoding: gzip`. All intervals (1m through 1mo)
+
+        cover regular-session bars back to 2000, ascending (oldest first;
+
+        page forward with `cursor`). `1d` is one US trading session, `1w`
+
+        is Monday-aligned, `1mo` is a calendar month. Prices are as-traded
+
+        (not adjusted for splits or dividends).
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/AcceptEncodingGzip'
+      - $ref: '#/components/parameters/Ticker'
+      - $ref: '#/components/parameters/BarStart'
+      - $ref: '#/components/parameters/BarEnd'
+      - $ref: '#/components/parameters/BarIntervalStocks'
+      - $ref: '#/components/parameters/Cursor'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 1000
+          maximum: 1000
+      responses:
+        '200':
+          description: OHLCV bars.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/GzipRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        o:
+          type: number
+        h:
+          type: number
+        l:
+          type: number
+        c:
+          type: number
+        v:
+          type: number
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
+    DiffPair:
+      type: object
+      properties:
+        before:
+          type: string
+        after:
+          type: string
+    SectionDiffStats:
+      type: object
+      properties:
+        before_paragraphs:
+          type: integer
+        after_paragraphs:
+          type: integer
+        unchanged_count:
+          type: integer
+        added_count:
+          type: integer
+        removed_count:
+          type: integer
+        modified_count:
+          type: integer
+    ScreenerResult:
+      type: object
+      properties:
+        taxonomy:
+          type: string
+        concept:
+          type: string
+        period:
+          type: string
+        unit:
+          type: string
+        label:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreenerRow'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    InsidersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsiderTransaction'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    Financials:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        name:
+          type: string
+        concepts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConceptBlock'
+    InsiderTransaction:
+      type: object
+      properties:
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        reporter:
+          type: string
+        reporter_cik:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        officer_title:
+          type: string
+        security:
+          type: string
+        transaction_date:
+          type: string
+          format: date
+        transaction_code:
+          type: string
+        transaction_description:
+          type: string
+        direction:
+          type: string
+          description: buy or sell
+        shares:
+          type: number
+        price_per_share:
+          type: number
+        notional_usd:
+          type: number
+        shares_owned_after:
+          type: number
+        ownership:
+          type: string
+          description: direct or indirect
+        derivative:
+          type: boolean
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    MetricValue:
+      type: object
+      properties:
+        value:
+          type: number
+        unit:
+          type: string
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        fiscal_year:
+          type: integer
+        fiscal_period:
+          type: string
+        form:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+    FilingSectionDetail:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        section:
+          type: string
+        content:
+          type: string
+    ScreenerRow:
+      type: object
+      properties:
+        cik:
+          type: string
+        name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        period_end:
+          type: string
+          format: date
+        accession:
+          type: string
+    StockSearchResult:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        cik:
+          type: string
+        exchange:
+          type: string
+    EventFilingsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventFiling'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    Filing:
+      type: object
+      properties:
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        accepted_at:
+          type: string
+          format: date-time
+        items:
+          type: string
+          description: Comma-separated 8-K item codes.
+        primary_document_url:
+          type: string
+        description:
+          type: string
+        has_xbrl:
+          type: boolean
+    FilingsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Filing'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    FilingSection:
+      type: object
+      properties:
+        section:
+          type: string
+        content:
+          type: string
+    CompensationFiling:
+      type: object
+      properties:
+        form:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        primary_document_url:
+          type: string
+    CompanyProfile:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        name:
+          type: string
+        exchanges:
+          type: array
+          items:
+            type: string
+        other_tickers:
+          type: array
+          items:
+            type: string
+        sic_code:
+          type: string
+        sic_description:
+          type: string
+        entity_type:
+          type: string
+        fiscal_year_end:
+          type: string
+          description: MMDD.
+    FinancialConcept:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        taxonomy:
+          type: string
+        concept:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricValue'
+    EventFiling:
+      type: object
+      properties:
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        accepted_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: string
+        primary_document_url:
+          type: string
+        description:
+          type: string
+    Ratios:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        latest:
+          $ref: '#/components/schemas/FinancialRatio'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancialRatio'
+    RiskFactorsDiff:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        current:
+          $ref: '#/components/schemas/FilingRef'
+        previous:
+          $ref: '#/components/schemas/FilingRef'
+        diff:
+          $ref: '#/components/schemas/SectionDiff'
+    SectionDiff:
+      type: object
+      properties:
+        added:
+          type: array
+          items:
+            type: string
+        removed:
+          type: array
+          items:
+            type: string
+        modified:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffPair'
+        stats:
+          $ref: '#/components/schemas/SectionDiffStats'
+    CompensationResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompensationFiling'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    OwnershipFiling:
+      type: object
+      properties:
+        form:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        primary_document_url:
+          type: string
+        description:
+          type: string
+    OwnershipResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnershipFiling'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
+    FilingSections:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilingSection'
+    FilingDetail:
+      allOf:
+      - $ref: '#/components/schemas/Filing'
+      - type: object
+        properties:
+          ticker:
+            type: string
+          cik:
+            type: string
+          archive_url:
+            type: string
+          files:
+            type: array
+            items:
+              type: string
+    FinancialRatio:
+      type: object
+      properties:
+        fiscal_year:
+          type: integer
+        fiscal_period:
+          type: string
+        period_end:
+          type: string
+          format: date
+        form:
+          type: string
+        accession:
+          type: string
+        gross_margin:
+          type: number
+        operating_margin:
+          type: number
+        net_margin:
+          type: number
+        return_on_equity:
+          type: number
+        return_on_assets:
+          type: number
+        debt_to_equity:
+          type: number
+        current_ratio:
+          type: number
+        quick_ratio:
+          type: number
+        asset_turnover:
+          type: number
+        free_cash_flow:
+          type: number
+        fcf_margin:
+          type: number
+    FilingRef:
+      type: object
+      properties:
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+    ConceptBlock:
+      type: object
+      properties:
+        taxonomy:
+          type: string
+        concept:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricValue'
+    StockSearchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockSearchResult'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+  parameters:
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    BarIntervalStocks:
+      name: interval
+      in: query
+      description: 'Bar interval. Default 1m. Stocks additionally support `1d`, `1w` (Monday-aligned), and `1mo` (calendar month), all aggregated from the same 1-minute history back to 2000. Prices are as-traded (not split/dividend adjusted). A `1d`/`1w`/`1mo` bar opens at midnight UTC of the period start.
+
+        '
+      schema:
+        type: string
+        enum:
+        - 1m
+        - 5m
+        - 15m
+        - 30m
+        - 1h
+        - 1d
+        - 1w
+        - 1mo
+        default: 1m
+    Accession:
+      name: accession
+      in: path
+      required: true
+      description: SEC accession number.
+      schema:
+        type: string
+    BarStart:
+      name: start
+      in: query
+      description: Inclusive lower bound (YYYY-MM-DD or RFC3339).
+      schema:
+        type: string
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
+    Ticker:
+      name: ticker
+      in: path
+      required: true
+      description: US equity ticker (case-insensitive).
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Page size. Default 50, max 200.
+      schema:
+        type: integer
+        default: 50
+        maximum: 200
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

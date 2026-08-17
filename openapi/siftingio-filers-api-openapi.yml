@@ -1,0 +1,189 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Filers API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Filers
+  description: 13F institutional holdings.
+paths:
+  /v1/fnd/filers/{filer}/holdings:
+    get:
+      tags:
+      - Filers
+      operationId: getFilerHoldings
+      summary: 13F institutional holdings
+      parameters:
+      - name: filer
+        in: path
+        required: true
+        description: Institutional filer CIK (numeric) or ticker.
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Latest 13F-HR positions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holdings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
+    Holdings:
+      type: object
+      properties:
+        filer_cik:
+          type: string
+        filer_name:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        total_value_usd:
+          type: number
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoldingPosition'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    HoldingPosition:
+      type: object
+      properties:
+        issuer:
+          type: string
+        security_type:
+          type: string
+        cusip:
+          type: string
+        value_usd:
+          type: number
+        shares:
+          type: number
+        shares_type:
+          type: string
+        discretion:
+          type: string
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Page size. Default 50, max 200.
+      schema:
+        type: integer
+        default: 50
+        maximum: 200
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

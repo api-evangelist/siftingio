@@ -1,0 +1,145 @@
+generated: '2026-08-17'
+method: derived
+source: openapi/_original/siftingio-openapi.yaml, asyncapi/siftingio-asyncapi.yaml
+also_searched: [https://sifting.io/docs/errors, https://sifting.io/docs/quickstart, https://sifting.io/docs/fix-api, https://sifting.io/llms.txt, https://sifting.io/enterprise]
+note: >-
+  Standards posture derived from the two published specs and the docs. NO `Compliance` pointer is
+  emitted in apis.yml: SiftingIO names enterprise security CAPABILITIES (SSO/SAML 2.0, SCIM, RBAC,
+  scoped keys, audit logs, TLS in transit, encrypted storage, tenant-isolated secrets, DPA on
+  request) but publishes NO named certification or audit — no SOC 2, ISO 27001, PCI DSS, HIPAA,
+  FedRAMP or CSA STAR anywhere on the site, and no trust centre (trust.sifting.io and
+  /trust, /security all 404). Capability claims are not a compliance program, and crediting them
+  as one would be exactly the "presence is not provenance" error.
+
+standards:
+  - id: openapi-3.1
+    conforms: true
+    evidence: 'openapi: 3.1.0 at https://sifting.io/openapi.yaml, 37 operations, 75 component schemas, HTTP 200 anonymous. Validated and refined into 11 per-tag specs.'
+  - id: asyncapi-3.0
+    conforms: true
+    evidence: 'asyncapi: 3.0.0 at https://sifting.io/asyncapi.yaml, 1 channel, 9 messages, 6 operations, HTTP 200 anonymous.'
+  - id: fix-4.4
+    conforms: true
+    evidence: 'FIX 4.4 market-data feed documented at https://sifting.io/docs/fix-api — session configuration, feed tier definitions and message flows (changelog 2026-06-25). Not machine-readable; prose only.'
+  - id: llms-txt
+    conforms: true
+    evidence: 'https://sifting.io/llms.txt (200, 11KB) and https://sifting.io/llms-full.txt (200, 37KB), both advertised as first-party.'
+  - id: mcp
+    conforms: true
+    evidence: 'MCP server io.sifting/mcp, 36 tools, @modelcontextprotocol/sdk ^1.29.0, server.json against the 2025-12-11 registry schema. LOCAL stdio only — no hosted endpoint.'
+  - id: apis-json
+    conforms: false
+    evidence: 'https://sifting.io/apis.json returned 404 on 2026-08-17, despite an earlier profile note that it was advertised.'
+  - id: apikey-auth
+    conforms: true
+    evidence: 'openapi securitySchemes: ApiKeyHeader (header X-API-Key) and ApiKeyQuery (query api_key). Applied globally via top-level security[].'
+  - id: oauth2
+    conforms: false
+    evidence: 'No oauth2 securityScheme in any spec; no /.well-known/oauth-authorization-server (404 on all three hosts); no OAuth documentation. API-key auth only.'
+  - id: oidc
+    conforms: false
+    evidence: 'No openIdConnect securityScheme; /.well-known/openid-configuration 404 on all three hosts. (SAML 2.0 / SSO is offered for the DASHBOARD on Enterprise plans, which is account access, not API authorization.)'
+  - id: rfc9457-problem-details
+    conforms: false
+    evidence: 'Errors use application/json with a custom {error,message,retry_after} envelope, not application/problem+json and no type/title/status/instance members. See errors/siftingio-problem-types.yml.'
+  - id: rfc9116-security-txt
+    conforms: false
+    evidence: '/.well-known/security.txt 404 on sifting.io, api.sifting.io and stream.sifting.io.'
+  - id: rfc8615-well-known
+    conforms: false
+    evidence: 'All 24 /.well-known/* probes across three hosts returned 404. See well-known/siftingio-well-known.yml.'
+  - id: rfc8594-sunset-header
+    conforms: false
+    evidence: 'A deprecation-window commitment is published in prose (quickstart Conventions) but no Sunset or Deprecation response header is documented or present in the spec.'
+  - id: rfc9331-ratelimit-headers
+    conforms: false
+    partial: true
+    evidence: >-
+      Rate-limit signalling IS published and complete in substance — X-RateLimit-Limit,
+      X-RateLimit-Remaining and Retry-After on every response, 429 on exhaustion — but under the
+      legacy X- prefixed field names, not the RFC 9331 RateLimit / RateLimit-Policy fields.
+  - id: cursor-pagination
+    conforms: true
+    evidence: 'Opaque cursor + limit query params; meta.next_cursor in ListMeta/BarsMeta, null or omitted on the final page. Consistent across every list endpoint.'
+  - id: idempotency
+    conforms: n/a
+    evidence: >-
+      All 37 operations are HTTP GET — idempotent by method, with no write surface, so no
+      Idempotency-Key contract exists or is needed. Recorded as not-applicable rather than false.
+      See conventions/siftingio-conventions.yml.
+  - id: iso8601-datetime
+    conforms: true
+    evidence: 'Published rule: date-only fields YYYY-MM-DD, timestamps YYYY-MM-DDTHH:MM:SSZ, tick timestamps int64 epoch ms, UTC throughout.'
+  - id: rfc7932-gzip-content-coding
+    conforms: true
+    evidence: 'Accept-Encoding: gzip honoured on all /fnd/* and /hist/* responses and REQUIRED on six heavy operations (406 gzip_required otherwise); modelled as components.parameters.AcceptEncodingGzip.'
+  - id: xbrl
+    conforms: true
+    evidence: >-
+      XBRL financial data served with explicit taxonomy and unit handling — getFinancials,
+      getFinancialConcept (taxonomy parameter), getScreener (concept/period/taxonomy/unit).
+      Monetary observations returned as {value, unit} with unit in USD / USD-per-share / shares /
+      pure.
+  - id: sec-edgar-derived
+    conforms: true
+    evidence: >-
+      Fundamentals are sourced from SEC EDGAR: 10-K/10-Q/8-K filings by accession number, Item 1A
+      risk-factor extraction and diffs, Forms 3/4/5 insiders, ownership, compensation, and 13F-HR
+      institutional holdings. CIKs exposed as 10-digit zero-padded strings, accessions in SEC
+      dashed form.
+  - id: json-schema-2020-12
+    conforms: true
+    evidence: 'Implied by OpenAPI 3.1.0, which uses JSON Schema 2020-12 for its schema objects. 75 component schemas.'
+  - id: fapi
+    conforms: false
+    evidence: 'Not a financial-account/payment-initiation API — no OAuth2, no mTLS, no FAPI claims. Out of scope for a market data provider.'
+  - id: psd2
+    conforms: false
+    evidence: 'Not applicable — SiftingIO is not an ASPSP/TPP and explicitly not a broker, exchange or financial institution.'
+  - id: soc2
+    conforms: false
+    evidence: 'No SOC 2 report, seal or mention found on sifting.io, /enterprise, /legal/* or in llms.txt. Probed /trust and /security — both 404; trust.sifting.io does not resolve.'
+  - id: iso27001
+    conforms: false
+    evidence: 'No ISO 27001 certification claimed anywhere on the published surface.'
+  - id: gdpr
+    conforms: partial
+    evidence: >-
+      A privacy policy (https://sifting.io/legal/privacy-policy) and a cookie policy are
+      published, and llms.txt states a "Data Processing Agreement available on request" for
+      enterprise customers. No DPA document is published at a URL (/legal/dpa 404) and no
+      GDPR/DPF compliance statement is made.
+
+regulatory_posture:
+  self_declaration: >-
+    SiftingIO publishes an unusually explicit negative scope statement in its site-wide
+    disclosure: the service is operated by SaltingIO LLC (a Wyoming LLC) and is "not an exchange,
+    broker, dealer, market maker, custodian, liquidity provider, or financial institution, and
+    does not execute, route, match, or settle trades."
+  redistribution_position: >-
+    "The Service does not redistribute raw primary exchange feeds, official exchange-of-record
+    prices, last-sale data, order books, or any venue's proprietary data; outputs are synthetic
+    reference values produced by SaltingIO's aggregation, normalization, and fair-price
+    methodologies."
+  disclosure_url: https://sifting.io/disclaimer
+  methodology_url: https://sifting.io/data-methodology
+  significance: >-
+    This is the licensing question every market data buyer asks first, answered in public and in
+    writing. It also means the data is explicitly derived/synthetic, not exchange-of-record —
+    material to anyone evaluating it for a regulated use.
+
+enterprise_capabilities_claimed:
+  source: https://sifting.io/llms.txt
+  claims: [99.9% uptime SLA with service credits, multi-region infrastructure and failover, SSO, SAML 2.0, SCIM provisioning (where available), RBAC, scoped API keys per environment, exportable audit logs, TLS in transit, encrypted storage, tenant-isolated secrets, DPA on request, custom MSA/NDA, security questionnaires supported]
+  verified: false
+  verification_note: >-
+    Provider-stated capability list, unverified and uncertified. Recorded as claims, not as
+    conformance, and deliberately NOT surfaced as a Compliance pointer.
+
+summary:
+  conforms_count: 11
+  not_conforms_count: 11
+  partial: 2
+  not_applicable: 1
+  strongest: 'Two current, public, anonymous, valid specs (OpenAPI 3.1.0 + AsyncAPI 3.0.0) plus a documented FIX 4.4 feed and a real MCP server — a three-protocol contract surface most providers this size do not have.'
+  weakest: 'Zero /.well-known/ presence, no security.txt, no certifications, no RFC-standard error or deprecation semantics.'

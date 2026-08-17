@@ -1,0 +1,98 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/changelog
+also: [https://sifting.io/pricing.md, https://sifting.io/docs/quickstart, https://sifting.io/tools]
+note: >-
+  READ THIS BEFORE USING THIS ARTIFACT. SiftingIO has NO test-mode / sandbox environment and no
+  test-vs-live key separation — there is one key prefix (sft_), one base URL, and one set of live
+  data. What it does have is an interactive console in the docs and a genuinely free tier, and
+  those are the two things a developer or agent actually uses to try the API before committing.
+  Both are recorded below. Nothing here is invented: there are no magic test symbols, no test
+  cards (this is not a payments API), no fixture generator and no time simulation, and this file
+  says so rather than manufacturing values.
+
+sandbox_environment:
+  exists: false
+  base_url: null
+  detail: >-
+    One production host only — https://api.sifting.io. The OpenAPI declares a single server entry
+    ("Production"). There is no api-sandbox / api-test / demo host, and none is documented.
+
+test_live_separation:
+  exists: false
+  key_prefixes:
+    live: sft_
+    test: null
+  detail: >-
+    A market data API is read-only (all 37 operations are GET), so there is no state to isolate
+    and nothing to roll back — the usual reason for a test mode does not apply. Trying the API
+    against real data IS the test.
+
+console:
+  exists: true
+  kind: try-it runner embedded in the docs
+  location: every endpoint page under https://sifting.io/docs
+  shipped: '2026-05-03'
+  source_quote: >-
+    "Every endpoint page in the docs now includes a runner that executes authenticated requests
+    against the live API, so you can verify parameters and response shapes before writing a line
+    of code." — https://sifting.io/changelog
+  authenticated: true
+  runs_against: live production API
+  example_pages: [https://sifting.io/docs/discovery/search, https://sifting.io/docs/live/trade, https://sifting.io/docs/historical/stocks]
+
+free_tier_as_trial:
+  exists: true
+  card_required: false
+  card_required_source: '"No card required." — https://sifting.io/pricing.md, Free tier notes'
+  signup: https://sifting.io/register
+  quota: 10,000 REST calls/mo per market
+  rate_limit: 60 req/min
+  ws_connections: 1
+  ws_subscriptions: 5
+  historical_depth: 1 month
+  scope: per market — a free key exists on every one of the five markets
+  parity: >-
+    "New endpoints and SDK updates land on the free tier the same day they land on Enterprise.
+    Same data, same schema, same credential." — https://sifting.io/changelog
+  agent_relevance: >-
+    This is what makes the MCP server usable at zero cost: the MCP integration page states a free
+    API key works (10,000 REST calls a month, 60 req/min, 1 month of history).
+
+no_account_surfaces:
+  note: >-
+    Three utilities run on the same data with NO key and NO account — the closest thing SiftingIO
+    has to an anonymous playground.
+  tools:
+    - {name: Market hours checker, url: https://sifting.io/market-hours, detail: 'Open/closed status, weekly schedules and holiday calendars for 23 markets, updated every 15 seconds.'}
+    - {name: Symbol catalog, url: https://sifting.io/symbols, detail: 'Every symbol SiftingIO publishes data for, each with a working API call.'}
+    - {name: Market hours widget, url: https://sifting.io/tools/widgets, detail: 'Embeddable live market-status badge. See components/siftingio-components.yml.'}
+
+postman:
+  url: https://www.postman.com/siftingio/siftingio-market-data-api
+  status: 200
+  kind: public workspace / collection
+  provider_claim: >-
+    "Prefer no code? Try every endpoint in our official Postman collection. No install required."
+    — https://sifting.io/sdks. llms.txt names it as the official first-party collection and warns
+    that any Postman workspace not listed there is unaffiliated.
+
+test_values:
+  magic_symbols: null
+  test_cards: null
+  test_accounts: null
+  test_clock: null
+  fixture_tooling: null
+  trigger_tooling: null
+  detail: >-
+    None published, and none applicable — SiftingIO is a read-only market data provider, not a
+    payments, messaging or provisioning API. Real symbols (AAPL, BTCUSD, EURUSD, XAUUSD, WTIUSD)
+    against the free tier are the documented way to exercise every endpoint.
+
+mcp_local_testing:
+  inspector: 'SIFTING_API_KEY=<key> npx @modelcontextprotocol/inspector siftingio-mcp'
+  source: https://github.com/SiftingIO/siftingio-mcp-python/blob/main/README.md
+  detail: >-
+    Both MCP implementations document the MCP inspector as the interactive way to exercise the
+    tools by hand, and both accept SIFTING_BASE_URL / SIFTING_WS_URL overrides to point at a
+    different backend — which is a developer escape hatch, not a provider-hosted sandbox.

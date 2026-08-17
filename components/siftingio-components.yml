@@ -1,0 +1,77 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/tools/widgets
+also: https://sifting.io/tools
+note: >-
+  SiftingIO ships one embeddable client-side component: a market-hours badge distributed as a
+  plain iframe, not as a JS element library or web component. There is no loader script, no npm
+  element package and no framework dependency — deliberately so ("A plain iframe with no
+  framework and only a few lines of inline script"). This is distinct from the server-side SDKs
+  in packages/siftingio-packages.yml. The embed snippet below is verbatim from the widget
+  configurator.
+
+families:
+  - family: Market status badges
+    description: >-
+      Live open/closed market-status badge with a self-updating countdown to the next open or
+      close, linking back to the full schedule.
+    distribution: iframe
+    loader_library: null
+    loader_note: 'None — no script tag, no bundle, no package. The iframe is the whole integration.'
+    account_required: false
+    cost: free
+    components:
+      - name: Market hours widget
+        url: https://sifting.io/tools/widgets
+        embed_base: https://sifting.io/embed/market-hours/{market}
+        embed_snippet: |
+          <iframe src="https://sifting.io/embed/market-hours/united-states?theme=light"
+            width="360" height="112" loading="lazy"
+            title="United States market hours by SiftingIO"
+            style="border:0;border-radius:12px;max-width:100%;overflow:hidden;">
+          </iframe>
+        configuration:
+          market:
+            in: path
+            example: united-states
+            options_note: >-
+              21 country markets (United States, Canada, Mexico, Brazil, United Kingdom, Germany,
+              France, Netherlands, Italy, Spain, Switzerland, Sweden, Türkiye, Japan, Hong Kong,
+              China, South Korea, Taiwan, India, Singapore, Australia) plus Forex and Crypto.
+          theme:
+            in: query
+            values: [light, dark]
+            default: light
+          timezone:
+            in: configurator
+            values: ['auto (viewer local)', 'market local', 'New York', Chicago, London, 'Paris / Frankfurt', Dubai, Singapore, Tokyo, Sydney, UTC]
+          size:
+            in: configurator
+            values: [compact, standard, wide]
+            note: 'Presets map to the width/height attributes; set width to 100% for full-width.'
+        behaviour:
+          self_updating: true
+          refresh_note: 'Reads live status with a self-updating countdown; nothing to refresh or keep in sync.'
+          responsive: true
+        backed_by:
+          operations: [getMarketStatus, getMarketHours, getMarketCalendar]
+          note: >-
+            The badge renders the same data the Markets API serves — see
+            openapi/siftingio-markets-api-openapi.yml. The underlying market-hours dataset is
+            refreshed every 15 seconds per https://sifting.io/market-hours.
+
+not_components:
+  - {item: 'Go / Python / JavaScript SDKs', where: packages/siftingio-packages.yml, reason: server-side client libraries, not UI}
+  - {item: n8n community node, where: packages/siftingio-packages.yml, reason: workflow-automation node, not a browser component}
+  - {item: Supabase Foreign Data Wrapper, where: packages/siftingio-packages.yml, reason: Postgres/Wasm extension, not a browser component}
+  - {item: Grafana data source, where: packages/siftingio-packages.yml, reason: 'dashboard plugin for a third-party host app, not an embeddable component for the customer''s own page'}
+  - {item: Docs try-it runner, where: sandbox/siftingio-sandbox.yml, reason: internal docs console, not distributed for embedding}
+
+summary:
+  component_count: 1
+  families: 1
+  distribution_models: [iframe]
+  web_components: false
+  element_library: false
+  hosted_dashboards: false
+  auth_required: false

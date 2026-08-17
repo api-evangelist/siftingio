@@ -1,0 +1,149 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/sdks + registry metadata endpoints (registry.npmjs.org, pypi.org, proxy.golang.org) + https://api.github.com/orgs/SiftingIO/repos
+note: >-
+  SiftingIO publishes three official client SDKs (Go, Python, JavaScript/TypeScript), all
+  maintained in the github.com/SiftingIO organization and generated against the same public
+  OpenAPI 3.1 and AsyncAPI 3.0 documents. Versions and publish dates below were read from each
+  registry's metadata endpoint on 2026-08-17. The Python MCP server is the one first-party
+  artifact with NO registry release: pyproject.toml declares name "siftingio-mcp" version 1.0.0
+  but pypi.org/pypi/siftingio-mcp/json returned 404, so it is installable from source only.
+packages:
+  - language: javascript
+    registry: npm
+    name: '@siftingio/sdk'
+    url: https://www.npmjs.com/package/@siftingio/sdk
+    install: npm install @siftingio/sdk
+    official: true
+    version: 0.3.0
+    published: '2026-08-02'
+    source_code: https://github.com/SiftingIO/sdk-typescript
+    docs: https://sifting.io/sdks/javascript
+    role: REST + WebSocket client, isomorphic (Node 18+ and browsers), full TypeScript types
+
+  - language: python
+    registry: pypi
+    name: siftingio
+    url: https://pypi.org/project/siftingio/
+    install: pip install siftingio
+    official: true
+    version: 0.2.0
+    published: '2026-08-02'
+    source_code: https://github.com/SiftingIO/sdk-python
+    docs: https://sifting.io/sdks/python
+    role: Sync and async REST clients plus a live WebSocket client, fully type-hinted (Python 3.9+)
+
+  - language: go
+    registry: go
+    name: github.com/siftingio/sdk-go
+    url: https://pkg.go.dev/github.com/siftingio/sdk-go
+    install: go get github.com/siftingio/sdk-go@latest
+    official: true
+    version: v0.3.0
+    published: '2026-08-02'
+    source_code: https://github.com/SiftingIO/sdk-go
+    docs: https://sifting.io/sdks/go
+    role: Typed client for Go services and data pipelines (Go 1.23+)
+
+  - language: javascript
+    registry: npm
+    name: siftingio-mcp
+    url: https://www.npmjs.com/package/siftingio-mcp
+    install: npx -y siftingio-mcp
+    official: true
+    version: 1.0.2
+    published: '2026-07-11'
+    source_code: https://github.com/SiftingIO/siftingio-mcp
+    docs: https://sifting.io/integrations/mcp
+    role: >-
+      MCP server (TypeScript) — 36 tools over the REST + WebSocket surface. Runs locally over
+      stdio; see mcp/siftingio-mcp.yml.
+    kind: mcp-server
+
+  - language: python
+    registry: pypi
+    name: siftingio-mcp
+    url: null
+    install: pip install -e . # from source; requires Python 3.13+
+    official: true
+    version: null
+    published: null
+    source_code: https://github.com/SiftingIO/siftingio-mcp-python
+    docs: https://sifting.io/integrations/mcp
+    role: Python port of the MCP server, built on FastMCP
+    kind: mcp-server
+    note: >-
+      Checked, nothing to record: pyproject.toml declares version 1.0.0 but
+      https://pypi.org/pypi/siftingio-mcp/json returned HTTP 404 on 2026-08-17 (as did
+      siftingio_mcp, sifting-io-mcp and mcp-siftingio). Not published to PyPI — source install
+      only, so a consumer cannot pin a released version.
+
+  - language: javascript
+    registry: npm
+    name: n8n-nodes-siftingio
+    url: https://www.npmjs.com/package/n8n-nodes-siftingio
+    install: npm install n8n-nodes-siftingio
+    official: true
+    version: 0.1.0
+    published: '2026-06-27'
+    source_code: https://github.com/SiftingIO/n8n-nodes-siftingio
+    docs: https://sifting.io/integrations/n8n
+    role: n8n community node — live prices, historical bars, fundamentals, filings; also usable as an AI Agent tool
+    kind: integration
+    note: >-
+      Registry-published 2026-06-27 but the repo was pushed 2026-07-30, so npm trails the source
+      by roughly a month.
+
+  - language: rust
+    registry: none
+    name: supabase-fdw
+    url: null
+    install: null
+    official: true
+    version: null
+    published: null
+    source_code: https://github.com/SiftingIO/supabase-fdw
+    docs: https://sifting.io/integrations/supabase
+    role: WebAssembly Foreign Data Wrapper — query SiftingIO market data from Supabase/Postgres as SQL foreign tables
+    kind: integration
+    note: >-
+      Checked, nothing to record: distributed as a Wasm FDW loaded by Supabase, not as a crate.
+      crates.io/api/v1/crates/siftingio returned 403 to an unauthenticated probe; no crate name
+      is advertised in the docs. Version is carried by GitHub releases only.
+
+  - language: go
+    registry: none
+    name: siftingio-grafana-datasource
+    url: null
+    install: null
+    official: true
+    version: null
+    published: null
+    source_code: https://github.com/SiftingIO/siftingio-grafana-datasource
+    role: Grafana data-source plugin
+    kind: integration
+    note: >-
+      Checked, nothing to record: not listed on sifting.io/integrations, and the Grafana plugin
+      catalog returns no match — https://grafana.com/api/plugins?filter=sifting returned
+      {"items":[]} and https://grafana.com/grafana/plugins/siftingio-datasource/ returned 404 on
+      2026-08-17. The repo carries no description and was last pushed 2026-08-14. Treated as an
+      unannounced, unpublished first-party repo; version unknown.
+
+registries_checked:
+  - {registry: npm, endpoint: 'https://registry.npmjs.org/<pkg>', result: '4 first-party packages'}
+  - {registry: pypi, endpoint: 'https://pypi.org/pypi/<pkg>/json', result: '1 found (siftingio); siftingio-mcp 404'}
+  - {registry: go, endpoint: 'https://proxy.golang.org/github.com/!sifting!i!o/sdk-go/@latest', result: 'v0.3.0'}
+  - {registry: crates.io, endpoint: 'https://crates.io/api/v1/crates/siftingio', result: '403 to anonymous probe; no crate advertised'}
+  - {registry: rubygems, result: 'no Ruby SDK published'}
+  - {registry: maven-central, result: 'no JVM SDK published'}
+  - {registry: nuget, result: 'no .NET SDK published'}
+  - {registry: packagist, result: 'no PHP SDK published'}
+
+summary:
+  official_sdks: 3
+  sdk_languages: [go, python, javascript]
+  currency: >-
+    All three SDKs were released on the same day (2026-08-02) at v0.3.0 / 0.2.0 / v0.3.0, one
+    week before the API's most recent feature ship (technical signals endpoints, 2026-08-14).
+    The signals endpoints therefore post-date every SDK release and may not yet be wrapped.
+  gaps: [ruby, java, dotnet, php, rust]

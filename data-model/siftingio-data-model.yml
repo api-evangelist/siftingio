@@ -1,0 +1,164 @@
+generated: '2026-08-17'
+method: derived
+source: openapi/_original/siftingio-openapi.yaml
+also_searched: [https://sifting.io/docs/quickstart, https://sifting.io/symbols, https://sifting.io/docs/filings]
+note: >-
+  Entity graph derived from the 75 component schemas, their $ref links and their id-reference
+  fields, cross-checked against the identifier rules published in the quickstart Conventions
+  section. This is a READ-ONLY reference data model: there are no customer-owned resources, no
+  create/update/delete operations and therefore no ownership relationships — every entity is a
+  projection of an external reality (a security, a venue, an SEC filing, an on-chain wallet) keyed
+  by a natural identifier rather than a provider-issued surrogate id. That is why no entity has an
+  `id` field and no id-prefix scheme exists.
+
+identifier_scheme:
+  provider_issued_ids: false
+  id_prefixes: []
+  id_prefix_note: >-
+    SiftingIO issues no object ids and uses no prefixed id scheme. Everything is addressed by a
+    natural key. The only prefixed identifier in the whole surface is the API key itself (sft_).
+  natural_keys:
+    - {key: ticker, form: 'case-insensitive string (AAPL = aapl)', domain: US equities, registry: SEC US ticker registry}
+    - {key: cik, form: 10-digit zero-padded string ("0000320193"), domain: SEC filers}
+    - {key: accession, form: 'dashed on output ("0000320193-25-000089"); dashed or undashed accepted on input', domain: SEC filings}
+    - {key: cusip, form: 9-character string, domain: 13F holdings positions}
+    - {key: venue, form: venue slug, domain: live market data}
+    - {key: symbol, form: 'venue symbol (BTCUSD, AAPL, EURUSD, XAUUSD, WTIUSD)', domain: all price data}
+    - {key: pair, form: 'FX pair (EURUSD) or canonical DEX pair (WETH-USDC)', domain: forex and DEX}
+    - {key: market, form: 'market slug (nyse, us_equities, forex, crypto)', domain: market reference}
+    - {key: chain, form: 'EVM chain slug', domain: on-chain}
+    - {key: address, form: '0x wallet address', domain: on-chain}
+    - {key: concept, form: XBRL concept name, domain: financials}
+    - {key: taxonomy, form: XBRL taxonomy name, domain: financials}
+    - {key: event_id, form: string, domain: economic calendar}
+
+domains:
+  - domain: live
+    tag: Live
+    entities: [LastTrade, LastQuote, LastClose, LastTVL, SnapshotEntry, SnapshotResponse]
+    keyed_by: [venue, symbol]
+    note: 'Compact wire shapes — LastTrade is {s,p,P,t} (symbol, price, size, epoch-ms). Never cached; 503 stale_snapshot past the freshness threshold.'
+  - domain: historical
+    tag: [Stocks, Forex, Crypto, Commodities, DEX]
+    entities: [Bar, BarsResponse, BarsMeta]
+    keyed_by: [symbol or ticker or pair, interval, time window]
+    note: 'ONE Bar shape {t,o,h,l,c,v} across every asset class — this is the "unified JSON schema" claim, and it holds in the spec.'
+  - domain: company
+    tag: Stocks
+    entities: [CompanyProfile, StockSearchResult, StockSearchResponse]
+    keyed_by: [ticker, cik]
+  - domain: sec-filings
+    tag: Stocks
+    entities: [Filing, FilingDetail, FilingRef, FilingsResponse, FilingSection, FilingSectionDetail, FilingSections, RiskFactorsDiff, SectionDiff, SectionDiffStats, DiffPair, EventFiling, EventFilingsResponse]
+    keyed_by: [ticker, accession, section]
+  - domain: financials
+    tag: Stocks
+    entities: [Financials, ConceptBlock, FinancialConcept, MetricValue, Ratios, FinancialRatio, ScreenerResult, ScreenerRow]
+    keyed_by: [ticker, cik, taxonomy, concept, period]
+  - domain: ownership
+    tag: [Stocks, Filers]
+    entities: [InsiderTransaction, InsidersResponse, OwnershipFiling, OwnershipResponse, CompensationFiling, CompensationResponse, Holdings, HoldingPosition]
+    keyed_by: [ticker, filer (ticker or CIK), cusip]
+  - domain: reference
+    tag: Markets
+    entities: [Market, MarketStatus, MarketHours, MarketHoursBlock, HoursSpec, HoursBreak, ForexSession, CalendarDay, MarketStats, MarketsListResponse, MarketsStatusAllResponse, MarketStatusResponse, MarketHoursResponse, MarketCalendarResponse]
+    keyed_by: [market, region]
+  - domain: macro
+    tag: EconomicCalendar
+    entities: [EconomicEvent, EconomicCalendarResponse]
+    keyed_by: [event_id, country, agency, date range]
+  - domain: signals
+    tag: Signals
+    entities: [LiveSignal, LiveSignalResponse, SignalSummary, SignalVerdict, SignalGroup, SignalIndicator, SignalVote, SignalCounts, SignalPoint, SignalEvent, SignalPrice, SignalHistoryResponse, SignalMeta]
+    keyed_by: [venue, symbol, interval]
+    note: 'Newest domain (shipped 2026-08-14). The summary carries the per-indicator votes behind the verdict — an unusually transparent derived-metric shape.'
+  - domain: on-chain
+    tag: DEX
+    entities: [WalletPortfolio, WalletToken, LastTVL]
+    keyed_by: [chain, address, pair]
+  - domain: convert
+    tag: Convert
+    entities: [ConvertResult]
+    keyed_by: [from, to]
+  - domain: envelope
+    entities: [ListMeta, BarsMeta, SignalMeta, Error]
+    note: Cross-cutting response envelopes, not business entities.
+
+relationships:
+  - {from: CompanyProfile, to: Filing, kind: has_many, via: ticker, note: 'listFilings(ticker) — a company''s filings within the recent-filings window.'}
+  - {from: FilingDetail, to: Filing, kind: extends, via: allOf $ref, note: 'FilingDetail = Filing + detail fields.'}
+  - {from: Filing, to: FilingSections, kind: has_many, via: accession, note: 'getFilingSections(ticker, accession).'}
+  - {from: FilingSections, to: FilingSectionDetail, kind: has_many, via: section, note: 'getFilingSection(ticker, accession, section); invalid_section returns valid_options.'}
+  - {from: RiskFactorsDiff, to: DiffPair, kind: has_many, via: $ref, note: 'Diff of Item 1A across the two most recent 10-Ks; needs >= 2 on record (else 404 insufficient_filings).'}
+  - {from: RiskFactorsDiff, to: SectionDiffStats, kind: has_one, via: $ref}
+  - {from: SectionDiff, to: SectionDiffStats, kind: has_one, via: $ref}
+  - {from: Holdings, to: HoldingPosition, kind: has_many, via: positions, note: '13F-HR position lines; each carries cusip, value_usd, shares, shares_type, discretion.'}
+  - {from: Holdings, to: ListMeta, kind: has_one, via: meta}
+  - {from: HoldingPosition, to: CompanyProfile, kind: references, via: cusip, confidence: low, note: 'CUSIP is the only link and the API exposes no CUSIP->ticker resolver, so an agent cannot join 13F positions back to company profiles without an external mapping. A real, documentable gap.'}
+  - {from: InsiderTransaction, to: CompanyProfile, kind: belongs_to, via: ticker}
+  - {from: InsiderTransaction, to: Filing, kind: belongs_to, via: accession, note: 'Every insider transaction cites the Form 3/4/5 accession it came from.'}
+  - {from: OwnershipFiling, to: Filing, kind: belongs_to, via: accession}
+  - {from: CompensationFiling, to: Filing, kind: belongs_to, via: accession}
+  - {from: EventFiling, to: Filing, kind: belongs_to, via: accession, note: '8-K material events, filterable by item.'}
+  - {from: ScreenerRow, to: CompanyProfile, kind: references, via: cik}
+  - {from: ScreenerRow, to: Filing, kind: references, via: accession, note: 'Every screener value is traceable to the filing it was extracted from — provenance carried in the data.'}
+  - {from: Financials, to: ConceptBlock, kind: has_many, via: $ref}
+  - {from: FinancialConcept, to: MetricValue, kind: has_many, via: series, note: 'Time series of {value, unit} observations for one XBRL concept.'}
+  - {from: Ratios, to: FinancialRatio, kind: has_many, via: $ref}
+  - {from: Market, to: MarketStats, kind: has_one, via: stats}
+  - {from: MarketStatus, to: MarketStats, kind: has_one, via: stats}
+  - {from: MarketStatus, to: Market, kind: belongs_to, via: market}
+  - {from: MarketHours, to: MarketHoursBlock, kind: has_many, via: $ref}
+  - {from: MarketHoursBlock, to: HoursSpec, kind: has_one, via: $ref}
+  - {from: HoursSpec, to: HoursBreak, kind: has_many, via: $ref, note: 'Intraday trading breaks (e.g. Asian lunch sessions).'}
+  - {from: MarketCalendarResponse, to: CalendarDay, kind: has_many, via: $ref, note: Holiday and early-close calendar.}
+  - {from: MarketHours, to: ForexSession, kind: has_many, via: $ref, note: 'Continuous-market sessions, distinct from exchange hours.'}
+  - {from: WalletPortfolio, to: WalletToken, kind: has_many, via: tokens}
+  - {from: SnapshotResponse, to: SnapshotEntry, kind: has_many, via: $ref, note: 'Whole-venue consensus state in one call; gzip required.'}
+  - {from: LiveSignalResponse, to: SignalSummary, kind: has_one, via: $ref}
+  - {from: SignalSummary, to: SignalGroup, kind: has_many, via: $ref}
+  - {from: SignalGroup, to: SignalIndicator, kind: has_many, via: $ref}
+  - {from: SignalIndicator, to: SignalVote, kind: has_one, via: $ref}
+  - {from: SignalSummary, to: SignalVerdict, kind: has_one, via: $ref}
+  - {from: SignalSummary, to: SignalCounts, kind: has_one, via: $ref}
+  - {from: SignalHistoryResponse, to: SignalPoint, kind: has_many, via: $ref}
+  - {from: SignalPoint, to: SignalEvent, kind: has_many, via: $ref, note: Cross events (e.g. MACD crossovers).}
+  - {from: SignalPoint, to: SignalPrice, kind: has_one, via: $ref}
+  - {from: BarsResponse, to: Bar, kind: has_many, via: $ref}
+  - {from: BarsResponse, to: BarsMeta, kind: has_one, via: meta}
+  - {from: FilingsResponse, to: ListMeta, kind: has_one, via: meta}
+  - {from: InsidersResponse, to: ListMeta, kind: has_one, via: meta}
+  - {from: OwnershipResponse, to: ListMeta, kind: has_one, via: meta}
+  - {from: CompensationResponse, to: ListMeta, kind: has_one, via: meta}
+  - {from: EventFilingsResponse, to: ListMeta, kind: has_one, via: meta}
+  - {from: ScreenerResult, to: ScreenerRow, kind: has_many, via: $ref}
+  - {from: EconomicCalendarResponse, to: EconomicEvent, kind: has_many, via: $ref}
+  - {from: StockSearchResponse, to: StockSearchResult, kind: has_many, via: $ref}
+
+entry_points:
+  - {operation: searchStocks, resolves: 'free text -> ticker + cik', note: 'The documented first call — "resolve a ticker through the search endpoint to verify your key is live before pulling deeper data."'}
+  - {operation: listMarkets, resolves: 'region -> market slug', note: 'Discover the market slug every other markets_* route expects.'}
+  - {operation: null, resolves: 'symbol discovery', note: 'The symbol catalog is a WEB page (https://sifting.io/symbols), not an API operation — there is no listSymbols endpoint. An agent must either know the symbol or search only within US equities.'}
+
+observations:
+  - >-
+    The unified-schema claim is real and checkable: one Bar shape {t,o,h,l,c,v} serves stocks,
+    forex, crypto, commodities and DEX, and one ListMeta cursor envelope serves every list.
+  - >-
+    Provenance is carried in the data, not just the docs: screener rows, insider transactions,
+    ownership, compensation and events all cite the SEC accession they were extracted from, so a
+    consumer can trace any derived number back to a filing.
+  - >-
+    Two joins are unreachable inside the API. CUSIP (13F positions) has no resolver to ticker or
+    CIK, and there is no symbol-listing operation — both require an out-of-band mapping.
+
+render: null
+render_note: 'No subway/ visual in this repo yet.'
+
+summary:
+  schemas: 75
+  domains: 12
+  relationships: 47
+  natural_keys: 13
+  provider_issued_ids: 0
+  write_operations: 0

@@ -1,0 +1,265 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Forex API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Forex
+  description: Historical OHLC bars for FX pairs.
+paths:
+  /v1/hist/forex/{pair}/bars:
+    get:
+      tags:
+      - Forex
+      operationId: getForexBars
+      summary: Historical forex OHLC bars (gzip required)
+      description: 'Requires `Accept-Encoding: gzip`. `v` is a per-bar tick count where
+
+        the upstream reports one, else 0. When `start` predates upstream
+
+        coverage the API returns `422` with code `data_unavailable` and an
+
+        `earliest` field carrying the first date it can serve.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/AcceptEncodingGzip'
+      - $ref: '#/components/parameters/Pair'
+      - $ref: '#/components/parameters/BarStartRequired'
+      - $ref: '#/components/parameters/BarEnd'
+      - $ref: '#/components/parameters/BarInterval'
+      - $ref: '#/components/parameters/BarOrder'
+      - $ref: '#/components/parameters/Cursor'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 1000
+          maximum: 2000
+      responses:
+        '200':
+          description: OHLC bars.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/GzipRequired'
+        '422':
+          $ref: '#/components/responses/DataUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        o:
+          type: number
+        h:
+          type: number
+        l:
+          type: number
+        c:
+          type: number
+        v:
+          type: number
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+  parameters:
+    BarInterval:
+      name: interval
+      in: query
+      description: 'Bar interval. Default 1m. All `/v1/hist/*` routes accept the same set: intraday (1m–1h), plus `1d` (UTC calendar day), `1w` (Monday-aligned), and `1mo` (calendar month). Coarser bars are aggregated from 1-minute history; a `1d`/`1w`/`1mo` bar opens at midnight UTC of the period start.
+
+        '
+      schema:
+        type: string
+        enum:
+        - 1m
+        - 5m
+        - 15m
+        - 30m
+        - 1h
+        - 1d
+        - 1w
+        - 1mo
+        default: 1m
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    BarOrder:
+      name: order
+      in: query
+      description: 'Sort direction by time. `asc` (default) returns oldest→newest. `desc` returns newest→oldest and anchors the first page at the most recent bar, so fetching the latest N costs one request instead of paging the whole window. Supported on commodities and forex only; other historical routes are ascending-only.
+
+        '
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+    BarStartRequired:
+      name: start
+      in: query
+      required: true
+      description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
+      schema:
+        type: string
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+    Pair:
+      name: pair
+      in: path
+      required: true
+      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    DataUnavailable:
+      description: No upstream has data for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

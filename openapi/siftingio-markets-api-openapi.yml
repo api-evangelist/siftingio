@@ -1,0 +1,415 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Markets API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Markets
+  description: Market catalog, status, hours, and holiday calendars.
+paths:
+  /v1/fnd/markets:
+    get:
+      tags:
+      - Markets
+      operationId: listMarkets
+      summary: List markets
+      parameters:
+      - $ref: '#/components/parameters/Region'
+      responses:
+        '200':
+          description: Market catalog.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketsListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/markets/status:
+    get:
+      tags:
+      - Markets
+      operationId: getAllMarketStatus
+      summary: All market statuses
+      parameters:
+      - $ref: '#/components/parameters/Region'
+      responses:
+        '200':
+          description: Open/closed snapshot for every market.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketsStatusAllResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/markets/{market}/status:
+    get:
+      tags:
+      - Markets
+      operationId: getMarketStatus
+      summary: One market status
+      parameters:
+      - $ref: '#/components/parameters/Market'
+      responses:
+        '200':
+          description: Open/closed snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/markets/{market}/hours:
+    get:
+      tags:
+      - Markets
+      operationId: getMarketHours
+      summary: Market trading hours
+      parameters:
+      - $ref: '#/components/parameters/Market'
+      responses:
+        '200':
+          description: Weekly schedule.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketHoursResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/fnd/markets/{market}/calendar:
+    get:
+      tags:
+      - Markets
+      operationId: getMarketCalendar
+      summary: Market holiday calendar
+      parameters:
+      - $ref: '#/components/parameters/Market'
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Holidays / half-days in range.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketCalendarResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    HoursSpec:
+      type: object
+      properties:
+        open:
+          type: string
+        close:
+          type: string
+        breaks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoursBreak'
+    MarketHoursResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketHours'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketStats:
+      type: object
+      properties:
+        market_cap_usd:
+          type: integer
+          format: int64
+        listed_companies:
+          type: integer
+        currency:
+          type: string
+        as_of:
+          type: string
+          format: date
+    MarketsListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketHours:
+      type: object
+      properties:
+        market:
+          type: string
+        type:
+          type: string
+        timezone:
+          type: string
+        hours:
+          $ref: '#/components/schemas/MarketHoursBlock'
+        opens_at:
+          type: string
+        closes_at:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForexSession'
+        exchanges:
+          type: array
+          items:
+            type: string
+    HoursBreak:
+      type: object
+      properties:
+        open:
+          type: string
+          description: HH:MM
+        close:
+          type: string
+          description: HH:MM
+    MarketStatus:
+      type: object
+      properties:
+        market:
+          type: string
+        type:
+          type: string
+        is_open:
+          type: boolean
+        state:
+          type: string
+          description: closed | regular | open
+        session:
+          type: string
+        next_open:
+          type: string
+          format: date-time
+        next_close:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        stats:
+          $ref: '#/components/schemas/MarketStats'
+    MarketCalendarResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDay'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketsStatusAllResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketStatus'
+        meta:
+          type: object
+          additionalProperties: true
+    ForexSession:
+      type: object
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          description: HH:MM UTC
+        end:
+          type: string
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        kind:
+          type: string
+          description: full_day_holiday | half_day_holiday
+        state:
+          type: string
+        early_close:
+          type: string
+          format: date-time
+    MarketHoursBlock:
+      type: object
+      properties:
+        regular:
+          $ref: '#/components/schemas/HoursSpec'
+        pre_market:
+          $ref: '#/components/schemas/HoursSpec'
+        post_market:
+          $ref: '#/components/schemas/HoursSpec'
+    MarketStatusResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketStatus'
+        meta:
+          type: object
+          additionalProperties: true
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    Market:
+      type: object
+      properties:
+        market:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          description: exchange | forex | crypto
+        timezone:
+          type: string
+        region:
+          type: string
+        exchanges:
+          type: array
+          items:
+            type: string
+        stats:
+          $ref: '#/components/schemas/MarketStats'
+  parameters:
+    Region:
+      name: region
+      in: query
+      description: Region filter.
+      schema:
+        type: string
+        enum:
+        - north_america
+        - europe
+        - asia_pacific
+        - latam
+        - global
+    Market:
+      name: market
+      in: path
+      required: true
+      description: Market slug, e.g. `us_equities`, `nyse`, `forex`, `crypto`.
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

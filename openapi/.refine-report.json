@@ -1,0 +1,29 @@
+{
+  "provider": "siftingio",
+  "sources": [
+    "siftingio-openapi.yaml"
+  ],
+  "outputs": [
+    "siftingio-commodities-api-openapi.yml",
+    "siftingio-convert-api-openapi.yml",
+    "siftingio-crypto-api-openapi.yml",
+    "siftingio-dex-api-openapi.yml",
+    "siftingio-economiccalendar-api-openapi.yml",
+    "siftingio-filers-api-openapi.yml",
+    "siftingio-forex-api-openapi.yml",
+    "siftingio-live-api-openapi.yml",
+    "siftingio-markets-api-openapi.yml",
+    "siftingio-signals-api-openapi.yml",
+    "siftingio-stocks-api-openapi.yml"
+  ],
+  "archived": [
+    "archived openapi/siftingio-openapi.yaml"
+  ],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "siftingio-openapi.yaml: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "apis.yml register: written (+11 apis, 13 total)"
+  ],
+  "skipped": []
+}

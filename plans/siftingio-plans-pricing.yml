@@ -1,0 +1,126 @@
+generated: '2026-08-17'
+method: probed
+source: https://sifting.io/pricing.md
+docs: https://sifting.io/pricing
+note: >-
+  Read from SiftingIO's own MACHINE-READABLE pricing document at https://sifting.io/pricing.md
+  (HTTP 200, text/markdown), which the provider advertises in llms.txt and names
+  https://sifting.io/pricing as its source of truth. Every price, quota and limit below is
+  verbatim from that document. Pricing is PER MARKET on a shared five-tier ladder: a customer
+  picks the markets they use and a tier for each, and the limits apply independently per market.
+currency: USD
+billing_periods: [monthly, annual]
+annual_discount: ~20% cheaper than monthly
+pricing_model: per-market, tiered
+billed_by: SaltingIO LLC (Wyoming, USA)
+
+markets:
+  - {market: Crypto, builder_monthly: 99, builder_annual_monthly: 79, pro_monthly: 299, pro_annual_monthly: 239, ultra_monthly: 799, ultra_annual_monthly: 639}
+  - {market: DEX & DeFi, builder_monthly: 129, builder_annual_monthly: 103, pro_monthly: 399, pro_annual_monthly: 320, ultra_monthly: 1099, ultra_annual_monthly: 879}
+  - {market: Forex, builder_monthly: 99, builder_annual_monthly: 79, pro_monthly: 299, pro_annual_monthly: 239, ultra_monthly: 799, ultra_annual_monthly: 639}
+  - {market: Commodities, builder_monthly: 99, builder_annual_monthly: 79, pro_monthly: 299, pro_annual_monthly: 239, ultra_monthly: 799, ultra_annual_monthly: 639}
+  - {market: US Stocks, builder_monthly: 129, builder_annual_monthly: 103, pro_monthly: 399, pro_annual_monthly: 320, ultra_monthly: 1099, ultra_annual_monthly: 879}
+markets_note: >-
+  "Prices differ by market because the cost to source and license the underlying data varies.
+  The canonical schema, SLA, and tier limits are identical across every market."
+
+plans:
+  - name: Free
+    price: 0
+    currency: USD
+    period: month
+    scope: per market
+    quota: 10,000 REST calls/mo
+    rate_limit: 60 req/min
+    ws_connections: 1
+    ws_subscriptions: 5
+    historical_depth: 1 month
+    uptime_sla: best-effort
+    support: community
+    card_required: false
+    limits_ref: rate-limits/siftingio-rate-limits.yml
+  - name: Builder
+    price_monthly_range: [99, 129]
+    price_annual_monthly_range: [79, 103]
+    currency: USD
+    period: month
+    scope: per market
+    quota: 250,000 REST calls/mo
+    rate_limit: 100 req/sec
+    ws_connections: 3
+    ws_subscriptions: 100
+    historical_depth: 1 year
+    uptime_sla: 99.5%
+    support: email
+    features: [scoped API keys]
+    overage: 'Hard cap — calls past the quota return 429 with Retry-After until the next billing cycle.'
+  - name: Pro
+    price_monthly_range: [299, 399]
+    price_annual_monthly_range: [239, 320]
+    currency: USD
+    period: month
+    scope: per market
+    quota: 5,000,000 REST calls/mo
+    rate_limit: 150 req/sec
+    ws_connections: 10
+    ws_subscriptions: 1,000
+    historical_depth: full
+    uptime_sla: 99.9% + service credits
+    support: priority email
+    features: [bundle-eligible, audit logs]
+    overage: 'Opt-in soft overage at a transparent per-call rate.'
+  - name: Ultra
+    price_monthly_range: [799, 1099]
+    price_annual_monthly_range: [639, 879]
+    currency: USD
+    period: month
+    scope: per market
+    quota: unlimited REST calls
+    rate_limit: 250 req/sec (upgradeable)
+    ws_connections: 50
+    ws_subscriptions: unlimited
+    historical_depth: full
+    uptime_sla: 99.9% + automatic credits
+    support: Slack
+    features: [bundle-eligible, IP allowlist]
+  - name: Enterprise
+    price: custom
+    currency: USD
+    period: negotiated
+    scope: cross-market
+    quota: custom
+    rate_limit: custom
+    ws_connections: custom
+    ws_subscriptions: custom
+    historical_depth: full + custom backfill
+    uptime_sla: 99.95% + credits
+    support: dedicated account manager, shared Slack or Teams channel
+    features: [SSO/SAML 2.0, SCIM provisioning, RBAC, exportable audit logs, DPA, custom MSA/NDA, Net-30/60 invoicing, purchase orders, ACH/SEPA/wire]
+    contact: enterprise@sifting.io
+    overage: negotiated overage and committed throughput
+
+bundle_discounts:
+  eligibility: Pro or Ultra tiers, two or more markets on one account
+  application: automatic at invoice
+  tiers:
+    - {markets: 2, name: Duo, discount_pct: 10}
+    - {markets: 3, name: Trio, discount_pct: 15}
+    - {markets: 4, name: Quartet, discount_pct: 20}
+    - {markets: 5, name: Platform, discount_pct: 25}
+  note: Tiers may be mixed across markets; the discount keys off markets at the same eligible tier.
+
+add_ons:
+  - {name: Extra REST calls, price_from: 79, unit: per 1M calls/mo, applies_to: [Builder, Pro]}
+  - {name: REST rate-limit upgrade, price_from: 199, unit: per +200 req/sec per month, applies_to: [Pro, Ultra]}
+  - {name: Extra WebSocket capacity, price_from: 59, unit: per +5 connections / +500 subscriptions per month, applies_to: all}
+  - {name: Historical backfill bundle, price_from: 499, unit: per bundle, note: One-shot historical pulls beyond the plan's depth}
+  - {name: Dedicated single-tenant cluster, price: quote on request, note: Isolated infrastructure with custom rate, region and routing}
+
+feature_parity_claim: >-
+  "New endpoints and SDK updates land on the free tier the same day they land on Enterprise. Same
+  data, same schema, same credential." — https://sifting.io/changelog
+
+plan_count: 5
+signup_url: https://sifting.io/register
+pricing_url: https://sifting.io/pricing
+machine_readable_pricing_url: https://sifting.io/pricing.md

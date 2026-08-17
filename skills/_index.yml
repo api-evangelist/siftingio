@@ -1,0 +1,77 @@
+generated: '2026-08-17'
+method: searched
+source: >-
+  https://github.com/SiftingIO/siftingio-ai-rules (provider-published, saved verbatim) plus four
+  API Evangelist skills generated from openapi/_original/siftingio-openapi.yaml
+note: >-
+  SiftingIO is one of the minority of providers that PUBLISHES its own agent instruction file. The
+  siftingio-ai-rules repository ships the same ~19KB ruleset in six client-specific forms
+  (AGENTS.md, CLAUDE.md, GEMINI.md, .github/copilot-instructions.md, .windsurfrules, plus six
+  scoped .cursor/rules/*.mdc files) and setup guides for ChatGPT and Perplexity. The canonical
+  AGENTS.md is saved here verbatim. The four generated skills below are narrower, flow-shaped
+  companions with every operationId grepped against the spec — they do not replace the provider's
+  file, they decompose it into per-task skills and add the error/retry rules from
+  https://sifting.io/docs/errors.
+
+skills:
+  - file: siftingio-agents.md
+    name: SiftingIO API agent rules (provider-published)
+    method: searched
+    source: https://github.com/SiftingIO/siftingio-ai-rules/blob/main/AGENTS.md
+    verbatim: true
+    api: openapi/_original/siftingio-openapi.yaml
+    covers: [auth, conventions, gzip, errors, rate limits, fundamentals, historical OHLCV, live REST, WebSocket, fair-price methodology, all three SDKs]
+    provider_variants:
+      - {file: AGENTS.md, target: generic / OpenAI Codex}
+      - {file: CLAUDE.md, target: Claude Code}
+      - {file: GEMINI.md, target: Gemini}
+      - {file: .github/copilot-instructions.md, target: GitHub Copilot}
+      - {file: .windsurfrules, target: Windsurf}
+      - {file: .cursorrules, target: Cursor (legacy single-file)}
+      - {file: .cursor/rules/siftingio-core.mdc, target: Cursor (scoped rule)}
+      - {file: .cursor/rules/siftingio-fundamentals.mdc, target: Cursor (scoped rule)}
+      - {file: .cursor/rules/siftingio-historical.mdc, target: Cursor (scoped rule)}
+      - {file: .cursor/rules/siftingio-live.mdc, target: Cursor (scoped rule)}
+      - {file: .cursor/rules/siftingio-methodology.mdc, target: Cursor (scoped rule)}
+      - {file: .cursor/rules/siftingio-sdks.mdc, target: Cursor (scoped rule)}
+      - {file: docs/chatgpt-setup.md, target: ChatGPT}
+      - {file: docs/perplexity-setup.md, target: Perplexity}
+    license: MIT
+
+  - file: siftingio-company-fundamentals-research.md
+    name: Research a US company's fundamentals from SEC filings
+    method: generated
+    api: openapi/siftingio-stocks-api-openapi.yml
+    operations: [searchStocks, getCompanyProfile, listFilings, getFiling, getFilingSections, getFilingSection, getRatios, getFinancials, getFinancialConcept, listInsiders, listEvents]
+
+  - file: siftingio-cross-asset-prices-and-bars.md
+    name: Pull live prices and historical OHLCV bars across asset classes
+    method: generated
+    api: openapi/siftingio-live-api-openapi.yml
+    operations: [getLastTrade, getLastQuote, getLastClose, getSnapshot, convertAmount, getStockBars, getForexBars, getCryptoBars, getCommodityBars, getDexBars]
+
+  - file: siftingio-market-hours-and-calendars.md
+    name: Check whether a market is open and read its calendar
+    method: generated
+    api: openapi/siftingio-markets-api-openapi.yml
+    operations: [listMarkets, getAllMarketStatus, getMarketStatus, getMarketHours, getMarketCalendar, getEconomicCalendar]
+
+  - file: siftingio-technical-signals-and-onchain.md
+    name: Read technical signals and on-chain positions
+    method: generated
+    api: openapi/siftingio-signals-api-openapi.yml
+    operations: [getLiveSignal, getSignalHistory, getWalletPortfolio, getLastTVL, getDexBars]
+
+grounding:
+  operationids_verified: true
+  verification: >-
+    Every operationId named across the four generated skills was grepped in
+    openapi/_original/siftingio-openapi.yaml and exists verbatim. The four skills name 31 of the
+    37 published operations in their frontmatter `operations[]`. Four more —
+    getRiskFactorsDiff, listOwnership, listCompensation, getFilerHoldings — are covered in the
+    skill bodies but not listed in frontmatter. Two are not covered by any generated skill:
+    getScreener (fundamentals screener) and listEarnings (earnings history); both are documented
+    in the provider's own AGENTS.md.
+  operations_in_frontmatter: 31
+  operations_published: 37
+  invented_operations: 0

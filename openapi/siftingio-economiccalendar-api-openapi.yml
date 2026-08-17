@@ -1,0 +1,208 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Economic Calendar API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: EconomicCalendar
+  description: US macro economic events.
+paths:
+  /v1/fnd/economic-calendar:
+    get:
+      tags:
+      - EconomicCalendar
+      operationId: getEconomicCalendar
+      summary: US economic calendar
+      parameters:
+      - name: from
+        in: query
+        description: Lower bound (YYYY-MM-DD or RFC3339). Default now.
+        schema:
+          type: string
+      - name: to
+        in: query
+        description: Upper bound. Default from + 30 days.
+        schema:
+          type: string
+      - name: country
+        in: query
+        schema:
+          type: string
+          default: US
+      - name: impact
+        in: query
+        schema:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+      - name: agency
+        in: query
+        schema:
+          type: string
+          enum:
+          - BLS
+          - BEA
+          - Census
+          - Fed
+          - DOL
+          - EIA
+      - name: event_id
+        in: query
+        description: Filter to a recurring event, e.g. `us_cpi`.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 100
+          minimum: 1
+          maximum: 500
+      responses:
+        '200':
+          description: Economic events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EconomicCalendarResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  responses:
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    EconomicCalendarResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EconomicEvent'
+        count:
+          type: integer
+        filter:
+          type: object
+          additionalProperties: true
+    EconomicEvent:
+      type: object
+      properties:
+        event_id:
+          type: string
+        name:
+          type: string
+        country:
+          type: string
+        currency:
+          type: string
+        agency:
+          type: string
+        impact:
+          type: string
+        scheduled_at:
+          type: string
+          format: date-time
+        actual:
+          type:
+          - number
+          - 'null'
+        previous:
+          type:
+          - number
+          - 'null'
+        consensus:
+          type:
+          - number
+          - 'null'
+        released_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

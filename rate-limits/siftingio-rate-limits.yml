@@ -1,0 +1,115 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/docs/errors
+docs: https://sifting.io/docs/errors
+also: [https://sifting.io/pricing.md, 'openapi/_original/siftingio-openapi.yaml (components.responses.TooManyRequests)']
+note: >-
+  SiftingIO publishes a dedicated "Errors & rate limits" operations page that gives an agent
+  everything it needs at runtime: the exact response headers, the exhaustion status code, the
+  error code to switch on, and the numeric budgets per tier. Two INDEPENDENT limits apply — a
+  monthly call quota and a per-second (Free: per-minute) rate limit — and both are enforced PER
+  MARKET at that market's tier, so one account can run Stocks on Pro and Crypto on Builder with
+  separately enforced budgets. The 429 + Retry-After contract is also present in the OpenAPI:
+  components.responses.TooManyRequests declares the Retry-After header, and every one of the 37
+  operations declares a 429 response.
+
+headers:
+  - name: X-RateLimit-Limit
+    meaning: Token bucket burst capacity for your subscription tier.
+    on: every REST response
+  - name: X-RateLimit-Remaining
+    meaning: Tokens remaining in the current window.
+    on: every REST response
+  - name: Retry-After
+    meaning: Seconds to wait before retrying.
+    on: 429 responses
+    in_openapi: true
+    openapi_ref: components.responses.TooManyRequests.headers.Retry-After (integer)
+header_style: X-RateLimit-* (de-facto draft form, not the RFC 9331 RateLimit-* field names)
+self_throttle_guidance: >-
+  "Every REST response carries these. Read them to self-throttle before you hit a 429." —
+  https://sifting.io/docs/errors
+
+exhaustion:
+  status: 429
+  error_code: rate_limit_exceeded
+  error_meaning: Per-tier rate budget exhausted, inspect Retry-After.
+  body_field: retry_after
+  body_field_source: components.schemas.Error.retry_after ("Present on rate-limit errors.")
+  envelope: '{"error":"rate_limit_exceeded","message":"...","retry_after":<seconds>}'
+
+limits:
+  - scope: per-api-key, per-market
+    tier: Free
+    window: month
+    limit: 10000
+    unit: REST calls
+  - scope: per-api-key, per-market
+    tier: Free
+    window: minute
+    limit: 60
+    unit: requests
+  - scope: per-api-key, per-market
+    tier: Builder
+    window: month
+    limit: 250000
+    unit: REST calls
+  - scope: per-api-key, per-market
+    tier: Builder
+    window: second
+    limit: 100
+    unit: requests
+  - scope: per-api-key, per-market
+    tier: Pro
+    window: month
+    limit: 5000000
+    unit: REST calls
+  - scope: per-api-key, per-market
+    tier: Pro
+    window: second
+    limit: 150
+    unit: requests
+  - scope: per-api-key, per-market
+    tier: Ultra
+    window: month
+    limit: null
+    unit: REST calls
+    note: Unlimited calls.
+  - scope: per-api-key, per-market
+    tier: Ultra
+    window: second
+    limit: 250
+    unit: requests
+    burst: upgradeable in +200 req/sec increments as a paid add-on
+  - scope: per-account
+    tier: Enterprise
+    window: negotiated
+    limit: null
+    unit: custom
+    note: Custom quota and rate, cross-market.
+
+websocket_limits:
+  - {tier: Free, connections: 1, subscriptions: 5}
+  - {tier: Builder, connections: 3, subscriptions: 100}
+  - {tier: Pro, connections: 10, subscriptions: 1000}
+  - {tier: Ultra, connections: 50, subscriptions: null}
+  - {tier: Enterprise, connections: custom, subscriptions: custom}
+websocket_note: >-
+  The AsyncAPI document (asyncapi/siftingio-asyncapi.yaml) documents no rate-limit frame; the
+  stream's control surface is subscribe/unsubscribe/ping with ack/pong/error replies. Quota
+  enforcement on the stream is by connection and subscription count, not by message rate.
+
+quota_exhaustion_behaviour:
+  free: 'Hard cap. Calls past the monthly quota return 429 with Retry-After until the next billing cycle.'
+  builder: 'Hard cap, same as Free — "a hard cap and a predictable bill".'
+  pro: 'Opt-in soft overage at a transparent per-call rate.'
+  enterprise: 'Negotiated overage and committed throughput.'
+  provider_commitment: '"We never silently bill or degrade." — https://sifting.io/docs/errors'
+
+raising_limits:
+  - {mechanism: Extra REST calls add-on, detail: 1M-call packs, price_from_usd_month: 79}
+  - {mechanism: Rate-limit upgrade add-on, detail: +200 req/sec increments (Pro and Ultra), price_from_usd_month: 199}
+  - {mechanism: Extra WebSocket capacity add-on, detail: +5 connections / +500 subscriptions, price_from_usd_month: 59}
+stability_commitment: 'Upgrades raise quota and rate limit "without changing the headers or codes".'
+
+limit_count: 9

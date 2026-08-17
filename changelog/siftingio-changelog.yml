@@ -1,0 +1,126 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/changelog
+note: >-
+  SiftingIO publishes a dated, categorised changelog ("Platform releases, new endpoints, SDK
+  updates, and documentation changes — newest first"), separate from the status page which carries
+  incidents and uptime. Entries below are the full published window as of 2026-08-17, verbatim in
+  substance. Entries are labelled Added / Improved / Docs; no entry in the published window is
+  marked breaking or deprecating.
+scheme: dated-entries (no release version numbers on platform entries)
+api_version_current: v1
+release_notes_channel: 'Newsletter — "one email per release" (footer subscribe form)'
+status_page: https://siftingio.instatus.com/
+parity_commitment: >-
+  "New endpoints and SDK updates land on the free tier the same day they land on Enterprise. Same
+  data, same schema, same credential."
+
+entries:
+  - date: '2026-08-14'
+    kind: Added
+    title: Technical signals endpoints
+    breaking: false
+    highlights: >-
+      Two REST endpoints for technical indicator signals: a summarized reading computed from a
+      panel of standard indicators, returned with the per-indicator votes behind it, and the same
+      signal as a historical time series. Covers US stocks, forex, crypto and commodities. The
+      output describes indicator state, not investment advice.
+    operations: [getLiveSignal, getSignalHistory]
+    spec: openapi/siftingio-signals-api-openapi.yml
+  - date: '2026-07-02'
+    kind: Added
+    title: TypeScript SDK published to npm
+    breaking: false
+    highlights: >-
+      The official TypeScript SDK (@siftingio/sdk) is live on npm, joining the Go module and the
+      Python package on PyPI. All three are generated against the same OpenAPI 3.1 and AsyncAPI
+      3.0 specs, so calls and data shapes match across languages.
+    artifact: packages/siftingio-packages.yml
+  - date: '2026-07-01'
+    kind: Added
+    title: Previous daily close endpoint
+    breaking: false
+    highlights: >-
+      New REST endpoint returning the prior trading day's close for any supported symbol, with
+      market-calendar-aware session handling and documented error semantics.
+    operations: [getLastClose]
+  - date: '2026-06-29'
+    kind: Docs
+    title: Concept guides
+    breaking: false
+    highlights: >-
+      New guides covering delayed vs. real-time market data, end-of-day data, currency pairs and
+      market depth, with related-guide links woven through the docs and product pages.
+  - date: '2026-06-28'
+    kind: Added
+    title: MCP server integration
+    breaking: false
+    highlights: >-
+      SiftingIO ships a Model Context Protocol server: connect Claude and other MCP clients to
+      real-time and historical market data with one config block. Setup guide and FAQs included.
+    artifact: mcp/siftingio-mcp.yml
+  - date: '2026-06-25'
+    kind: Docs
+    title: FIX 4.4 market data documentation
+    breaking: false
+    highlights: >-
+      Full documentation for the FIX API market data feed: session configuration, feed tier
+      definitions and message flows for high-performance trading systems.
+    url: https://sifting.io/docs/fix-api
+  - date: '2026-06-25'
+    kind: Added
+    title: n8n and Supabase integration guides
+    breaking: false
+    highlights: >-
+      Step-by-step integrations for wiring SiftingIO data into n8n workflows and Supabase
+      projects, with shared layout primitives for future integration pages.
+  - date: '2026-06-18'
+    kind: Added
+    title: Historical commodities endpoint
+    breaking: false
+    highlights: >-
+      Historical OHLCV for metals, energy and agricultural commodities over REST, under the same
+      bar resolutions and schema as every other asset class.
+    operations: [getCommodityBars]
+    spec: openapi/siftingio-commodities-api-openapi.yml
+  - date: '2026-06-05'
+    kind: Added
+    title: Currency conversion and market snapshot endpoints
+    breaking: false
+    highlights: >-
+      Live currency conversion across forex and crypto pairs, plus a market snapshot endpoint
+      returning the current consensus state of a whole market in one call.
+    operations: [convertAmount, getSnapshot]
+  - date: '2026-06-02'
+    kind: Added
+    title: DEX & DeFi historical bars
+    breaking: false
+    highlights: >-
+      Historical OHLCV bars for decentralized-exchange pools, extending the DEX & DeFi product
+      beyond real-time swap streams.
+    operations: [getDexBars]
+    spec: openapi/siftingio-dex-api-openapi.yml
+  - date: '2026-05-03'
+    kind: Improved
+    title: Try-it runner on every endpoint page
+    breaking: false
+    highlights: >-
+      Every endpoint page in the docs now includes a runner that executes authenticated requests
+      against the live API, so you can verify parameters and response shapes before writing a
+      line of code.
+    artifact: sandbox/siftingio-sandbox.yml
+
+summary:
+  entry_count: 11
+  window: '2026-05-03 to 2026-08-14'
+  cadence: roughly two to four entries a month
+  breaking_changes_in_window: 0
+  deprecations_in_window: 0
+  additive_only: true
+  observation: >-
+    Eight of the eleven entries are new endpoints or new surfaces in a three-month window, and
+    none is breaking — consistent with the published "fields are additive, never removed within a
+    version" promise. The corollary is a currency problem downstream: the MCP server (last cut
+    2026-07-11) and the three SDKs (all 2026-08-02) predate the 2026-08-14 signals endpoints, so
+    the newest capability is REST-only for now. See rest_only[] in
+    mcp/siftingio-tool-crosswalk.yml.

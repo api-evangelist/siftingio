@@ -1,7 +1,15 @@
 name: SiftingIO
 description: >-
-  Cross-asset market data APIs covering stocks, forex, cryptocurrency, DeFi/on-chain, commodities, and SEC fundamentals.
-  Delivered via REST, WebSocket, and FIX with a public OpenAPI 3.1 contract and an open-source (local) MCP server.
+  Cross-asset market data APIs covering US equities, forex, cryptocurrency, DeFi/on-chain, commodities,
+  and SEC/EDGAR fundamentals, aggregated across venues and normalized into one JSON schema so every asset
+  class shares the same fields, auth model and integration flow. Delivered over REST (37 operations under a
+  public OpenAPI 3.1 contract), a WebSocket stream described by a public AsyncAPI 3.0 contract, and a
+  documented FIX 4.4 market-data feed. Fundamentals cover filings, filing-text extraction and risk-factor
+  diffs, XBRL financials, ratios, insiders, ownership and 13F holdings; reference data covers market status,
+  hours and holiday calendars; derived data covers technical signals and on-chain TVL. Official Go, Python
+  and JavaScript SDKs, an open-source (locally-run) MCP server with 36 tools, and a provider-published agent
+  ruleset. Operated by SaltingIO LLC, a Wyoming company; explicitly not a broker, exchange or trading venue.
+image: https://sifting.io/logo.svg
 url: https://siftingio.apievangelist.com/apis.yml
 created: '2026-08-17'
 modified: '2026-08-17'
@@ -34,119 +42,442 @@ tags:
   - MCP server
   - agent-native
 apis:
-  - name: SiftingIO Market Data API
-    description: >-
-      REST market data API (v1) covering historical OHLCV, live data, currency conversion, discovery, SEC filings, XBRL
-      financials, insiders/holdings, economic calendar, market hours, technical signals, and DEX wallets. Auth via
-      X-API-Key header or api_key query param. WebSocket streaming at wss://stream.sifting.io/ws/v1 and FIX also
-      available.
-    humanURL: https://sifting.io/docs
-    baseURL: https://api.sifting.io
-    tags:
-      - Financial market data
-      - Stocks/equities
-      - Forex
-      - Cryptocurrency
-      - DeFi/on-chain
-      - Commodities
-      - SEC filings
-      - XBRL
-      - Fundamentals
-      - Fintech
-      - Quant/trading infrastructure
-      - Real-time streaming
-      - WebSocket
-      - FIX
-      - financial data
-      - market data
-      - stocks
-      - forex
-      - cryptocurrency
-      - DeFi
-      - commodities
-      - real-time
-      - websocket
-      - REST API
-      - MCP server
-      - agent-native
-    properties:
-      - type: OpenAPI
-        url: https://sifting.io/openapi.yaml
-      - type: PostmanCollection
-        url: https://www.postman.com/siftingio/siftingio-market-data-api
-      - type: Documentation
-        url: https://sifting.io/docs
-      - type: Documentation
-        url: https://sifting.io/docs/quickstart
-      - type: LLMsTxt
-        url: https://sifting.io/llms.txt
-      - type: Documentation
-        url: https://sifting.io/integrations/mcp
-  - name: SiftingIO Live Stream
-    description: >-
-      WebSocket streaming API for live market data, described by an AsyncAPI 3.0 contract. Also offers a documented FIX
-      API.
-    humanURL: https://sifting.io/docs/fix-api
-    baseURL: wss://stream.sifting.io/ws/v1
-    tags:
-      - Financial market data
-      - Stocks/equities
-      - Forex
-      - Cryptocurrency
-      - DeFi/on-chain
-      - Commodities
-      - SEC filings
-      - XBRL
-      - Fundamentals
-      - Fintech
-      - Quant/trading infrastructure
-      - Real-time streaming
-      - WebSocket
-      - FIX
-    properties:
-      - type: AsyncAPI
-        url: https://sifting.io/asyncapi.yaml
-      - type: Documentation
-        url: https://sifting.io/docs/fix-api
-  - name: SiftingIO MCP Server
-    description: >-
-      Hosted remote MCP server (Streamable HTTP) exposing tools for live prices, historical bars, discovery,
-      fundamentals, filings, market status, and the economic calendar. Auth via X-API-Key or Bearer.
-    humanURL: https://sifting.io/integrations/mcp
-    baseURL: https://mcp.sifting.io/mcp
-    tags:
-      - Financial market data
-      - Stocks/equities
-      - Forex
-      - Cryptocurrency
-      - DeFi/on-chain
-      - Commodities
-      - SEC filings
-      - XBRL
-      - Fundamentals
-      - Fintech
-      - Quant/trading infrastructure
-      - Real-time streaming
-      - WebSocket
-      - FIX
-    properties:
-      - type: MCPServer
-        url: https://mcp.sifting.io/mcp
-      - type: Documentation
-        url: https://sifting.io/integrations/mcp
-      - type: LLMsTxt
-        url: https://sifting.io/llms.txt
-      - type: LLMsTxt
-        url: https://sifting.io/llms-full.txt
-      - type: AgentSkill
-        url: https://github.com/SiftingIO/siftingio-ai-rules
+- name: SiftingIO Live Stream
+  description: >-
+    WebSocket streaming API for live market data, described by an AsyncAPI 3.0 contract. Also offers a
+    documented FIX API.
+  humanURL: https://sifting.io/docs/fix-api
+  baseURL: wss://stream.sifting.io/ws/v1
+  tags:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
+  - SEC filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-time streaming
+  - WebSocket
+  - FIX
+  properties:
+  - type: AsyncAPI
+    url: asyncapi/siftingio-asyncapi.yaml
+  - type: AsyncAPI
+    url: https://sifting.io/asyncapi.yaml
+  - type: Documentation
+    url: https://sifting.io/docs/fix-api
+- name: SiftingIO MCP Server
+  description: >-
+    LOCALLY-RUN MCP server, not a hosted endpoint. The client launches it (`npx -y siftingio-mcp`, or the
+    Python package) and it runs on the user's own machine, reading the key from SIFTING_API_KEY. 36 tools
+    cover forex, crypto, stocks, commodities, SEC fundamentals and on-chain DEX data. MIT licensed, with
+    first-party TypeScript and Python implementations.
+  humanURL: https://sifting.io/integrations/mcp
+  tags:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
+  - SEC filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-time streaming
+  - WebSocket
+  - FIX
+  properties:
+  - type: MCPServer
+    url: https://sifting.io/integrations/mcp
+  - type: SourceCode
+    url: https://github.com/SiftingIO/siftingio-mcp
+  - type: SourceCode
+    url: https://github.com/SiftingIO/siftingio-mcp-python
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: LLMsTxt
+    url: https://sifting.io/llms-full.txt
+  - type: AgentSkill
+    url: https://github.com/SiftingIO/siftingio-ai-rules
+- aid: siftingio:siftingio-commodities-api
+  name: SiftingIO Commodities API
+  description: Historical OHLC bars for commodities (metals, energy, industrials).
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Commodities
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-commodities-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-convert-api
+  name: SiftingIO Convert API
+  description: Live currency and token conversion across forex and crypto.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Convert
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-convert-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-crypto-api
+  name: SiftingIO Crypto API
+  description: Historical OHLCV bars for crypto symbols.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Crypto
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-crypto-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-dex-api
+  name: SiftingIO DEX API
+  description: On-chain wallet portfolios and historical DEX bars.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - DEX
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-dex-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-economiccalendar-api
+  name: SiftingIO Economic Calendar API
+  description: US macro economic events.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - EconomicCalendar
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-economiccalendar-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-filers-api
+  name: SiftingIO Filers API
+  description: 13F institutional holdings.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Filers
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-filers-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-forex-api
+  name: SiftingIO Forex API
+  description: Historical OHLC bars for FX pairs.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Forex
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-forex-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-live-api
+  name: SiftingIO Live API
+  description: Live market data read from the engine's latest snapshot.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Live
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-live-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-markets-api
+  name: SiftingIO Markets API
+  description: Market catalog, status, hours, and holiday calendars.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Markets
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-markets-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-signals-api
+  name: SiftingIO Signals API
+  description: >-
+    Technical-analysis signals (live and historical) across stocks, forex, crypto, and commodities.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Signals
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-signals-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-stocks-api
+  name: SiftingIO Stocks API
+  description: US-equity fundamentals (SEC) and historical bars.
+  humanURL: https://sifting.io/docs
+  baseURL: https://api.sifting.io
+  tags:
+  - Stocks
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-stocks-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
 maintainers:
-  - FN: SaltingIO LLC
-    url: https://github.com/SiftingIO
   - FN: SiftingIO
+    email: hello@sifting.io
+    url: https://sifting.io
+  - FN: SaltingIO LLC
+    email: enterprise@sifting.io
     url: https://github.com/SiftingIO
 generated:
   by: apis.io/add
   model: claude-opus-4-8
   confidence: 90
   at: '2026-08-17T11:48:02.881Z'
+common:
+- type: AgenticAccess
+  url: agentic-access/siftingio-agentic-access.yml
+- type: DomainSecurity
+  url: security/siftingio-domain-security.yml
+- type: Authentication
+  url: authentication/siftingio-authentication.yml
+- type: Packages
+  url: packages/siftingio-packages.yml
+- type: SDKs
+  url: packages/siftingio-packages.yml
+- type: SDKs
+  name: SDKs & libraries
+  url: https://sifting.io/sdks
+- type: LLMsTxt
+  name: llms.txt (verbatim)
+  url: llms/siftingio-llms.txt
+- type: MCPServer
+  url: mcp/siftingio-mcp.yml
+- type: ToolCrosswalk
+  url: mcp/siftingio-tool-crosswalk.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Conventions
+  url: conventions/siftingio-conventions.yml
+- type: ErrorCatalog
+  url: errors/siftingio-problem-types.yml
+- type: Conformance
+  url: conformance/siftingio-conformance.yml
+- type: DataModel
+  url: data-model/siftingio-data-model.yml
+- type: Lifecycle
+  url: lifecycle/siftingio-lifecycle.yml
+- type: StatusPage
+  url: https://siftingio.instatus.com/
+- type: Deprecation
+  name: Versioning & deprecation policy
+  url: https://sifting.io/docs/quickstart
+- type: ChangeLog
+  url: changelog/siftingio-changelog.yml
+- type: ChangeLog
+  name: Changelog
+  url: https://sifting.io/changelog
+- type: Plans
+  url: plans/siftingio-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/siftingio-rate-limits.yml
+- type: Sandbox
+  url: sandbox/siftingio-sandbox.yml
+- type: Components
+  url: components/siftingio-components.yml
+- type: Overlay
+  name: Commodities API enhancements
+  url: overlays/siftingio-commodities-overlay.yaml
+- type: Overlay
+  name: Convert API enhancements
+  url: overlays/siftingio-convert-overlay.yaml
+- type: Overlay
+  name: Crypto API enhancements
+  url: overlays/siftingio-crypto-overlay.yaml
+- type: Overlay
+  name: DEX API enhancements
+  url: overlays/siftingio-dex-overlay.yaml
+- type: Overlay
+  name: Economic Calendar API enhancements
+  url: overlays/siftingio-economiccalendar-overlay.yaml
+- type: Overlay
+  name: Filers API enhancements
+  url: overlays/siftingio-filers-overlay.yaml
+- type: Overlay
+  name: Forex API enhancements
+  url: overlays/siftingio-forex-overlay.yaml
+- type: Overlay
+  name: Live API enhancements
+  url: overlays/siftingio-live-overlay.yaml
+- type: Overlay
+  name: Markets API enhancements
+  url: overlays/siftingio-markets-overlay.yaml
+- type: Overlay
+  name: Signals API enhancements
+  url: overlays/siftingio-signals-overlay.yaml
+- type: Overlay
+  name: Stocks API enhancements
+  url: overlays/siftingio-stocks-overlay.yaml
+- type: Website
+  url: https://sifting.io
+- type: DeveloperPortal
+  url: https://sifting.io/docs
+- type: Documentation
+  url: https://sifting.io/docs
+- type: APIReference
+  url: https://sifting.io/docs
+- type: GettingStarted
+  name: Quickstart
+  url: https://sifting.io/docs/quickstart
+- type: OpenAPI
+  name: OpenAPI 3.1 (provider-hosted, canonical)
+  url: https://sifting.io/openapi.yaml
+- type: AsyncAPI
+  name: AsyncAPI 3.0 (provider-hosted, canonical)
+  url: https://sifting.io/asyncapi.yaml
+- type: Postman
+  name: Official Postman collection
+  url: https://www.postman.com/siftingio/siftingio-market-data-api
+- type: Support
+  url: https://sifting.io/contact
+- type: Community
+  name: Slack community
+  url: https://sifting.io/community/slack
+- type: Blog
+  url: https://sifting.io/blog
+- type: GitHubOrganization
+  url: https://github.com/SiftingIO
+- type: Pricing
+  url: https://sifting.io/pricing
+- type: SignUp
+  url: https://sifting.io/register
+- type: Login
+  url: https://sifting.io/login
+- type: TermsOfService
+  url: https://sifting.io/legal/terms-of-use
+- type: PrivacyPolicy
+  url: https://sifting.io/legal/privacy-policy
+# NO WellKnown / SecurityTxt / APICatalog pointer: all 24 /.well-known/* probes across
+# sifting.io, api.sifting.io and stream.sifting.io returned 404. The recorded absence lives at
+# well-known/siftingio-well-known.yml but is deliberately NOT pointed at, because the pointer
+# would assert the provider serves that surface.
+# NO Security / VulnerabilityDisclosure / TrustCenter / Compliance pointer: no security.txt, no
+# disclosure or bug-bounty page, no trust centre and no named certification (SOC 2, ISO 27001,
+# PCI, HIPAA, FedRAMP) is published. probe-security-programs.py returned vdp=none trust=none.
+# NO Idempotency pointer: all 37 operations are HTTP GET, so there is no idempotency-key
+# contract to point at. Rationale recorded in conventions/siftingio-conventions.yml.
+# NO AgentCard pointer: /.well-known/agent-card.json and /.well-known/agent.json both 404 on all
+# three hosts, so no a2a/ artifact was written.
+# NO Webhooks pointer: the event surface is a WebSocket stream (AsyncAPI), not webhooks.
+# NO OAuthScopes pointer: API-key auth only, no OAuth surface.
+x-enrichment:
+  date: '2026-08-17'
+  status: enriched
+  artifacts_added: 35
+  pass: local-v1

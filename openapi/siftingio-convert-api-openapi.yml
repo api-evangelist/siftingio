@@ -1,0 +1,158 @@
+openapi: 3.2.0
+info:
+  title: SiftingIO Market Data Convert API
+  version: 1.0.0
+  description: 'REST data-plane for the SiftingIO market data API: live prices,
+
+    SEC fundamentals (filings, XBRL financials, ratios, insiders, ownership),
+
+    historical OHLCV bars, market calendars, DEX wallet portfolios, and the
+
+    US economic calendar.
+
+
+    Authentication is by API key, sent as the `X-API-Key` header (preferred)
+
+    or the `api_key` query parameter.
+
+
+    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
+
+    (they respond `406` otherwise): the screener, both financials endpoints,
+
+    all historical-bars endpoints, and the market snapshot.
+
+
+    This document describes the data plane only. Account, billing, and auth
+
+    (the `/ops/v1` control plane) are out of scope.
+
+    '
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+servers:
+- url: https://api.sifting.io
+  description: Production
+security:
+- ApiKeyHeader: []
+- ApiKeyQuery: []
+tags:
+- name: Convert
+  description: Live currency and token conversion across forex and crypto.
+paths:
+  /v1/convert/{from}/{to}:
+    get:
+      tags:
+      - Convert
+      operationId: convertAmount
+      summary: Convert between forex and crypto at live rates
+      description: 'Converts an amount between any supported forex or crypto symbols at the current mid-market rate. Converting an asset to itself returns rate 1.
+
+        '
+      parameters:
+      - name: from
+        in: path
+        required: true
+        description: Source currency or token (e.g. `USD`, `BTC`). Case-insensitive.
+        schema:
+          type: string
+      - name: to
+        in: path
+        required: true
+        description: Target currency or token (e.g. `GBP`, `ETH`). Case-insensitive.
+        schema:
+          type: string
+      - name: amount
+        in: query
+        description: Amount to convert. Defaults to 1 (returns just the rate).
+        schema:
+          type: number
+          default: 1
+      responses:
+        '200':
+          description: Converted amount and the rate applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConvertResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    ConvertResult:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Echo of the source symbol.
+        to:
+          type: string
+          description: Echo of the target symbol.
+        amount:
+          type: number
+          description: Amount sent in.
+        rate:
+          type: number
+          description: Rate applied; amount × rate = result.
+        result:
+          type: number
+          description: Converted amount.
+        t:
+          type: integer
+          format: int64
+          description: Timestamp of the underlying market rate (Unix epoch ms).
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key

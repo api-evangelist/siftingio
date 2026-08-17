@@ -1,0 +1,147 @@
+generated: '2026-08-17'
+method: searched
+status: published
+source: >-
+  https://sifting.io/integrations/mcp + https://github.com/SiftingIO/siftingio-mcp
+  (server.json, package.json, src/tools/*.ts read at refs/heads/main on 2026-08-17)
+
+server:
+  name: io.sifting/mcp
+  display_name: SiftingIO market data MCP server
+  description: >-
+    SiftingIO market data: live crypto/forex/metals prices, OHLCV bars, SEC fundamentals,
+    13F data. Returns the same normalized shapes as the REST API, with structuredContent
+    alongside the text on the snapshot tools.
+  version: 1.0.2
+  license: MIT
+  transport: stdio
+  registry_name: io.sifting/mcp
+  registry_schema: https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json
+  implementations:
+    - language: typescript
+      package: siftingio-mcp
+      registry: npm
+      version: 1.0.2
+      published: '2026-07-11'
+      repo: https://github.com/SiftingIO/siftingio-mcp
+      sdk_dependency: '@modelcontextprotocol/sdk ^1.29.0'
+    - language: python
+      package: siftingio-mcp
+      registry: none
+      version: null
+      published: null
+      repo: https://github.com/SiftingIO/siftingio-mcp-python
+      sdk_dependency: 'mcp>=1.13 (FastMCP)'
+      note: >-
+        Declares version 1.0.0 in pyproject.toml but is NOT published to PyPI
+        (https://pypi.org/pypi/siftingio-mcp/json returned 404 on 2026-08-17). Source install only.
+
+deployment:
+  mode: local-stdio
+  endpoint: null
+  install: npx -y siftingio-mcp
+  package: https://www.npmjs.com/package/siftingio-mcp
+  auth: api-key
+  verified: probed
+
+deployment_evidence:
+  claim: >-
+    THERE IS NO PROVIDER-HOSTED REMOTE MCP ENDPOINT. The client launches the server on the
+    user's own machine and it reads the key from the SIFTING_API_KEY environment variable.
+    An agent cannot reach SiftingIO over MCP without a human first installing and running
+    this package.
+  probes:
+    - {url: 'https://mcp.sifting.io/mcp', method: POST tools/list, status: 0, result: DNS does not resolve}
+    - {url: 'https://api.sifting.io/mcp', method: POST tools/list, status: 404}
+    - {url: 'https://sifting.io/mcp', method: POST tools/list, status: 404}
+    - url: 'https://api.sifting.io/v1/mcp'
+      method: POST tools/list
+      status: 401
+      result: >-
+        FALSE POSITIVE — discarded. api.sifting.io gates every /v1/* path behind the API key
+        BEFORE routing, so a nonsense path returns the identical response: GET
+        /v1/definitely-not-a-real-path-zzz also returned 401 {"error":"invalid api key"}. The
+        401 is the key gate, not evidence of an MCP endpoint.
+  local_http_transport:
+    binary: siftingio-mcp-http
+    note: >-
+      Both implementations ship an optional Streamable HTTP transport, but it is a LOCAL
+      transport the user runs themselves (loopback), not a hosted service. It does not make
+      this a remote server.
+  environment:
+    - {name: SIFTING_API_KEY, required: true, secret: true, description: 'SiftingIO API key (get one at https://sifting.io)'}
+    - {name: SIFTING_BASE_URL, required: false, secret: false, description: Override the REST API base URL}
+    - {name: SIFTING_WS_URL, required: false, secret: false, description: Override the WebSocket URL}
+
+tools_source: >-
+  Read from the TypeScript server source (src/tools/**/*.ts at refs/heads/main), not from a
+  live tools/list call — there is no hosted endpoint to introspect. Names, titles and the
+  backing client calls are verbatim from the source; per-tool inputSchema is Zod in the
+  source and is bound to its real OpenAPI operation in mcp/siftingio-tool-crosswalk.yml.
+
+tools:
+  # --- Live snapshots (/v1/last/*) ---
+  - {name: last_trade, title: Last trade, category: live, source_operation: 'openapi/siftingio-live-api-openapi.yml#getLastTrade'}
+  - {name: last_quote, title: Last quote, category: live, source_operation: 'openapi/siftingio-live-api-openapi.yml#getLastQuote'}
+  - {name: last_tvl, title: Last DEX TVL, category: live, source_operation: 'openapi/siftingio-live-api-openapi.yml#getLastTVL'}
+  # --- Historical bars (/v1/hist/*) ---
+  - {name: crypto_bars, title: Crypto OHLCV bars, category: historical, source_operation: 'openapi/siftingio-crypto-api-openapi.yml#getCryptoBars'}
+  - {name: forex_bars, title: Forex OHLC bars, category: historical, source_operation: 'openapi/siftingio-forex-api-openapi.yml#getForexBars'}
+  - {name: stocks_bars, title: Stock OHLCV bars, category: historical, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getStockBars'}
+  # --- Discovery + company (/v1/fnd/stocks/*) ---
+  - {name: stocks_search, title: Search stocks, category: discovery, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#searchStocks'}
+  - {name: stocks_profile, title: Company profile, category: fundamentals, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getCompanyProfile'}
+  - {name: stocks_screener, title: Fundamentals screener, category: fundamentals, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getScreener'}
+  # --- SEC filings + filing text ---
+  - {name: stocks_filings, title: List filings, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listFilings'}
+  - {name: stocks_filing, title: Filing detail, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getFiling'}
+  - {name: stocks_sections, title: Filing sections, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getFilingSections'}
+  - {name: stocks_section, title: Filing section text, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getFilingSection'}
+  - {name: stocks_risk_factors_diff, title: Risk-factors diff, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getRiskFactorsDiff'}
+  - {name: stocks_events, title: Material events, category: sec-filings, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listEvents'}
+  # --- Financials (XBRL) ---
+  - {name: stocks_financials, title: XBRL financials, category: financials, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getFinancials'}
+  - {name: stocks_financial_concept, title: Financial concept series, category: financials, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getFinancialConcept'}
+  - {name: stocks_ratios, title: Financial ratios, category: financials, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#getRatios'}
+  - {name: stocks_earnings, title: Earnings history, category: financials, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listEarnings'}
+  # --- Insiders, ownership, compensation, 13F ---
+  - {name: stocks_insiders, title: Insider transactions, category: ownership, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listInsiders'}
+  - {name: stocks_ownership, title: Ownership filings, category: ownership, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listOwnership'}
+  - {name: stocks_compensation, title: Compensation filings, category: ownership, source_operation: 'openapi/siftingio-stocks-api-openapi.yml#listCompensation'}
+  - {name: filers_holdings, title: 13F holdings, category: ownership, source_operation: 'openapi/siftingio-filers-api-openapi.yml#getFilerHoldings'}
+  # --- Calendars + reference ---
+  - {name: economic_calendar_list, title: Economic calendar, category: reference, source_operation: 'openapi/siftingio-economiccalendar-api-openapi.yml#getEconomicCalendar'}
+  - {name: markets_list, title: List markets, category: reference, source_operation: 'openapi/siftingio-markets-api-openapi.yml#listMarkets'}
+  - {name: markets_status_all, title: All market statuses, category: reference, source_operation: 'openapi/siftingio-markets-api-openapi.yml#getAllMarketStatus'}
+  - {name: markets_status, title: Market status, category: reference, source_operation: 'openapi/siftingio-markets-api-openapi.yml#getMarketStatus'}
+  - {name: markets_hours, title: Market hours, category: reference, source_operation: 'openapi/siftingio-markets-api-openapi.yml#getMarketHours'}
+  - {name: markets_calendar, title: Market calendar, category: reference, source_operation: 'openapi/siftingio-markets-api-openapi.yml#getMarketCalendar'}
+  # --- On-chain ---
+  - {name: dex_wallet, title: DEX wallet portfolio, category: on-chain, source_operation: 'openapi/siftingio-dex-api-openapi.yml#getWalletPortfolio'}
+  # --- WebSocket session management (no REST equivalent) ---
+  - {name: ws_subscribe, title: Subscribe to live stream, category: streaming, source_operation: 'asyncapi/siftingio-asyncapi.yaml#subscribe'}
+  - {name: ws_unsubscribe, title: Unsubscribe from live stream, category: streaming, source_operation: 'asyncapi/siftingio-asyncapi.yaml#unsubscribe'}
+  - {name: ws_poll, title: Poll buffered ticks, category: streaming, source_operation: null}
+  - {name: ws_collect, title: Collect a live window, category: streaming, source_operation: null}
+  - {name: ws_status, title: Live stream status, category: streaming, source_operation: null}
+  - {name: ws_disconnect, title: Disconnect live stream, category: streaming, source_operation: null}
+
+prompts:
+  note: >-
+    The server also registers MCP prompts (src/prompts/company.ts, src/prompts/market.ts).
+    Names were not enumerated from source in this pass.
+
+summary:
+  tool_count: 36
+  tools_backed_by_rest: 30
+  tools_streaming_only: 6
+  matches_published_claim: true
+  claim_source: >-
+    "36 tools cover forex, crypto, stocks, commodities, SEC fundamentals and on-chain DEX
+    data" — https://sifting.io/llms.txt
+  discrepancy: >-
+    The published claim names COMMODITIES, but the server source contains no commodities tool:
+    there is no commodities_bars tool wrapping getCommodityBars, and no commodities file under
+    src/tools/. Commodities are reachable over MCP only through the venue-parameterised
+    last_trade / last_quote snapshot tools. See rest_only[] in
+    mcp/siftingio-tool-crosswalk.yml.

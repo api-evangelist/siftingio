@@ -1,0 +1,97 @@
+generated: '2026-08-17'
+method: searched
+source: https://sifting.io/docs/quickstart
+also:
+  - https://sifting.io/changelog
+  - https://siftingio.instatus.com/
+  - https://sifting.io/pricing.md
+  - openapi/_original/siftingio-openapi.yaml
+
+versioning:
+  scheme: uri-path
+  current: v1
+  docs: https://sifting.io/docs/quickstart
+  statement: >-
+    "Every endpoint is pinned to v1, baked right into the path (e.g. /v1/fnd/stocks/search).
+    Within a version, fields are additive, never removed. Breaking changes ship under a new
+    version with a deprecation window."
+  additive_only_within_version: true
+  header_or_date_versioning: false
+
+deprecation:
+  policy_url: https://sifting.io/docs/quickstart
+  policy_statement: 'Breaking changes ship under a new version with a deprecation window.'
+  policy_kind: published commitment on the Conventions section of the quickstart, not a dedicated policy page
+  deprecation_window_length: not specified
+  sunset_header: null
+  deprecation_header: null
+  rfc8594: false
+  header_note: >-
+    RFC 8594 Sunset / RFC 9745 Deprecation response headers are NOT documented and do not appear
+    anywhere in the OpenAPI. The commitment is editorial: a new version path plus a window, with
+    no machine-readable signal on the wire for a client to detect. Worth raising with the
+    provider — they already carry the two hardest parts (a stable version path and an
+    additive-only promise) and are one response header away from a machine-detectable
+    deprecation.
+  deprecations_observed: 0
+  changelog_window_checked: '2026-05-03 to 2026-08-14 — no entry marked breaking or deprecating'
+
+deprecated_operations: []
+deprecated_operations_note: 'No operation in any of the 11 refined specs carries `deprecated: true`.'
+
+sla:
+  published: true
+  source: https://sifting.io/pricing.md
+  by_tier:
+    - {tier: Free, uptime_target: best-effort, credits: false}
+    - {tier: Builder, uptime_target: '99.5%', credits: false}
+    - {tier: Pro, uptime_target: '99.9%', credits: 'service credits'}
+    - {tier: Ultra, uptime_target: '99.9%', credits: 'automatic credits'}
+    - {tier: Enterprise, uptime_target: '99.95%', credits: true}
+  headline_claim: '99.9% uptime · <100ms latency · 24/7 support (site footer)'
+  sla_document_url: null
+  sla_document_note: 'No standalone SLA document is published; /legal/sla returns 404. The targets live on the pricing page and in llms.txt.'
+  multi_region: 'Globally distributed, multi-region infrastructure with failover (llms.txt Enterprise section).'
+
+status_page:
+  url: https://siftingio.instatus.com/
+  status: 200
+  provider: Instatus
+  scope: 'Incidents and uptime ("Incidents and uptime live on the status page" — /changelog)'
+  on_own_domain: false
+
+changelog:
+  url: https://sifting.io/changelog
+  artifact: changelog/siftingio-changelog.yml
+  cadence: roughly two to four entries a month
+  release_notes_email: 'Newsletter, one email per release'
+
+support:
+  by_tier:
+    - {tier: Free, channel: community}
+    - {tier: Builder, channel: email}
+    - {tier: Pro, channel: priority email}
+    - {tier: Ultra, channel: Slack}
+    - {tier: Enterprise, channel: 'dedicated account manager + shared Slack or Teams channel'}
+  contact: hello@sifting.io
+  enterprise_contact: enterprise@sifting.io
+  community: https://sifting.io/community/slack
+  book_a_call: https://cal.com/siftingio
+  contact_page: https://sifting.io/contact
+
+data_lifecycle:
+  historical_depth_by_tier:
+    - {tier: Free, depth: 1 month}
+    - {tier: Builder, depth: 1 year}
+    - {tier: Pro, depth: full}
+    - {tier: Ultra, depth: full}
+    - {tier: Enterprise, depth: 'full + custom backfill'}
+  freshness_guard: >-
+    Live routes return 503 stale_snapshot when the snapshot is older than a configured threshold
+    (default 5s), with last_t and server_now in the body — a published freshness contract rather
+    than a silent stale read.
+  methodology: https://sifting.io/data-methodology
+
+roadmap:
+  url: null
+  note: 'Probed https://sifting.io/roadmap — 404. No public roadmap; /changelog is retrospective only.'

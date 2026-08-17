@@ -1,0 +1,60 @@
+generated: '2026-08-17'
+method: probed
+source: live GET probes on 2026-08-17
+note: >-
+  RECORDED ABSENCE, NOT A PRESENCE. Every /.well-known/ path was probed on all three SiftingIO
+  hosts and all 24 probes returned 404. No WellKnown, SecurityTxt or APICatalog pointer is
+  emitted in apis.yml — there is no served document to point at. The 404s are genuine, not
+  SPA catch-alls: sifting.io answers unknown paths with a 404 status (Next.js not-found HTML),
+  api.sifting.io and stream.sifting.io answer 404 text/plain "Cannot GET <path>". SiftingIO's
+  machine-readable discovery lives at conventional root paths instead — /openapi.yaml,
+  /asyncapi.yaml, /llms.txt, /llms-full.txt and /pricing.md are all served 200 from sifting.io.
+hosts:
+  - host: https://sifting.io
+    role: website + docs + spec host
+    documents:
+      - {path: /.well-known/security.txt, status: 404}
+      - {path: /.well-known/openid-configuration, status: 404}
+      - {path: /.well-known/oauth-authorization-server, status: 404}
+      - {path: /.well-known/oauth-protected-resource, status: 404}
+      - {path: /.well-known/api-catalog, status: 404}
+      - {path: /.well-known/ai-plugin.json, status: 404}
+      - {path: /.well-known/agent-card.json, status: 404}
+      - {path: /.well-known/agent.json, status: 404}
+  - host: https://api.sifting.io
+    role: REST API host (servers[] in the OpenAPI)
+    documents:
+      - {path: /.well-known/security.txt, status: 404}
+      - {path: /.well-known/openid-configuration, status: 404}
+      - {path: /.well-known/oauth-authorization-server, status: 404}
+      - {path: /.well-known/oauth-protected-resource, status: 404}
+      - {path: /.well-known/api-catalog, status: 404}
+      - {path: /.well-known/ai-plugin.json, status: 404}
+      - {path: /.well-known/agent-card.json, status: 404}
+      - {path: /.well-known/agent.json, status: 404}
+  - host: https://stream.sifting.io
+    role: WebSocket host (AsyncAPI servers.production)
+    documents:
+      - {path: /.well-known/security.txt, status: 404}
+      - {path: /.well-known/openid-configuration, status: 404}
+      - {path: /.well-known/oauth-authorization-server, status: 404}
+      - {path: /.well-known/oauth-protected-resource, status: 404}
+      - {path: /.well-known/api-catalog, status: 404}
+      - {path: /.well-known/ai-plugin.json, status: 404}
+      - {path: /.well-known/agent-card.json, status: 404}
+      - {path: /.well-known/agent.json, status: 404}
+summary:
+  paths_probed: 24
+  hits: 0
+  security_txt: false
+  oauth_metadata: false
+  api_catalog: false
+  agent_card: false
+  pointer_emitted: false
+root_level_discovery_that_does_exist:
+  - {url: 'https://sifting.io/openapi.yaml', status: 200, kind: OpenAPI 3.1.0}
+  - {url: 'https://sifting.io/asyncapi.yaml', status: 200, kind: AsyncAPI 3.0.0}
+  - {url: 'https://sifting.io/llms.txt', status: 200, kind: llms.txt}
+  - {url: 'https://sifting.io/llms-full.txt', status: 200, kind: llms-full.txt}
+  - {url: 'https://sifting.io/pricing.md', status: 200, kind: machine-readable pricing}
+  - {url: 'https://sifting.io/apis.json', status: 404, kind: APIs.json — advertised in an earlier profile but NOT served}

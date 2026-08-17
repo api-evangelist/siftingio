@@ -1,0 +1,222 @@
+asyncapi: 3.0.0
+info:
+  title: SiftingIO Live Stream
+  version: "1.0.0"
+  description: |
+    WebSocket API for live market data. Connect to
+    `wss://stream.sifting.io/ws/v1?key=sft_...` — the API key is passed as the
+    `key` query parameter (the only WebSocket auth method).
+
+    After connecting, send `subscribe` operations for the products and symbols
+    you want; the server streams `tick` and `tvl` frames and replies to control
+    operations with `ack` / `pong` / `error` frames. All frames are JSON text.
+  license:
+    name: MIT
+  contact:
+    name: SiftingIO
+    url: https://sifting.io/docs
+
+servers:
+  production:
+    host: stream.sifting.io
+    pathname: /ws/v1
+    protocol: wss
+    description: Production live stream. Append `?key=sft_...` to authenticate.
+
+channels:
+  stream:
+    address: /ws/v1
+    title: Live stream
+    description: Single bidirectional channel carrying control ops and data frames.
+    messages:
+      auth:
+        $ref: "#/components/messages/Auth"
+      subscribe:
+        $ref: "#/components/messages/Subscribe"
+      unsubscribe:
+        $ref: "#/components/messages/Unsubscribe"
+      ping:
+        $ref: "#/components/messages/Ping"
+      ack:
+        $ref: "#/components/messages/Ack"
+      pong:
+        $ref: "#/components/messages/Pong"
+      tick:
+        $ref: "#/components/messages/Tick"
+      tvl:
+        $ref: "#/components/messages/TVL"
+      error:
+        $ref: "#/components/messages/ErrorFrame"
+
+operations:
+  subscribe:
+    action: send
+    channel:
+      $ref: "#/channels/stream"
+    title: Subscribe to symbols
+    messages:
+      - $ref: "#/channels/stream/messages/subscribe"
+  unsubscribe:
+    action: send
+    channel:
+      $ref: "#/channels/stream"
+    title: Unsubscribe from symbols
+    messages:
+      - $ref: "#/channels/stream/messages/unsubscribe"
+  authenticate:
+    action: send
+    channel:
+      $ref: "#/channels/stream"
+    title: Authenticate (alternative to the key query param)
+    messages:
+      - $ref: "#/channels/stream/messages/auth"
+  ping:
+    action: send
+    channel:
+      $ref: "#/channels/stream"
+    title: Application-level ping
+    messages:
+      - $ref: "#/channels/stream/messages/ping"
+  receiveFrames:
+    action: receive
+    channel:
+      $ref: "#/channels/stream"
+    title: Server frames
+    messages:
+      - $ref: "#/channels/stream/messages/ack"
+      - $ref: "#/channels/stream/messages/pong"
+      - $ref: "#/channels/stream/messages/tick"
+      - $ref: "#/channels/stream/messages/tvl"
+      - $ref: "#/channels/stream/messages/error"
+
+components:
+  messages:
+    Auth:
+      name: auth
+      title: Auth
+      payload:
+        $ref: "#/components/schemas/AuthOp"
+    Subscribe:
+      name: subscribe
+      title: Subscribe
+      payload:
+        $ref: "#/components/schemas/SubscribeOp"
+    Unsubscribe:
+      name: unsubscribe
+      title: Unsubscribe
+      payload:
+        $ref: "#/components/schemas/SubscribeOp"
+    Ping:
+      name: ping
+      title: Ping
+      payload:
+        $ref: "#/components/schemas/PingOp"
+    Ack:
+      name: ack
+      title: Ack
+      payload:
+        $ref: "#/components/schemas/AckFrame"
+    Pong:
+      name: pong
+      title: Pong
+      payload:
+        $ref: "#/components/schemas/PongFrame"
+    Tick:
+      name: tick
+      title: Tick
+      summary: Price update.
+      payload:
+        $ref: "#/components/schemas/TickFrame"
+    TVL:
+      name: tvl
+      title: TVL update
+      payload:
+        $ref: "#/components/schemas/TVLFrame"
+    ErrorFrame:
+      name: error
+      title: Error
+      payload:
+        $ref: "#/components/schemas/ErrorFrame"
+
+  schemas:
+    Product:
+      type: string
+      enum: [cex, dex, fx, us, tvl]
+      description: Subscribable product channel.
+
+    AuthOp:
+      type: object
+      required: [op, key]
+      properties:
+        op: { const: auth }
+        key: { type: string }
+
+    SubscribeOp:
+      type: object
+      required: [op, product, symbols]
+      properties:
+        op: { type: string, enum: [subscribe, unsubscribe] }
+        product: { $ref: "#/components/schemas/Product" }
+        symbols:
+          type: array
+          items: { type: string }
+
+    PingOp:
+      type: object
+      required: [op]
+      properties:
+        op: { const: ping }
+
+    AckFrame:
+      type: object
+      required: [f]
+      properties:
+        f: { const: ack }
+      additionalProperties: true
+
+    PongFrame:
+      type: object
+      required: [f]
+      properties:
+        f: { const: pong }
+
+    TickFrame:
+      type: object
+      required: [f, s, t]
+      properties:
+        f: { const: tick }
+        s: { type: string, description: Symbol. }
+        p: { type: string, description: Trade price. }
+        P: { type: string, description: Trade size. }
+        b: { type: string, description: Bid price. }
+        B: { type: string, description: Bid size. }
+        a: { type: string, description: Ask price. }
+        A: { type: string, description: Ask size. }
+        t:
+          {
+            type: integer,
+            format: int64,
+            description: "Unix epoch milliseconds.",
+          }
+        class: { type: string, description: Asset class tag. }
+
+    TVLFrame:
+      type: object
+      required: [f, s, t]
+      properties:
+        f: { const: tvl }
+        s: { type: string }
+        usd: { type: string }
+        r0: { type: string }
+        r1: { type: string }
+        n: { type: integer }
+        t: { type: integer, format: int64 }
+
+    ErrorFrame:
+      type: object
+      required: [f, code]
+      properties:
+        f: { const: error }
+        code: { type: string }
+        message: { type: string }
+        limit: { type: integer }
