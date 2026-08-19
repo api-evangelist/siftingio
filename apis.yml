@@ -13,7 +13,7 @@ image: https://sifting.io/logo.svg
 url: https://raw.githubusercontent.com/api-evangelist/siftingio/refs/heads/main/apis.yml
 created: '2026-08-17'
 modified: '2026-08-17'
-specificationVersion: '0.21'
+specificationVersion: '0.23'
 tags:
   - Financial market data
   - Stocks/equities
