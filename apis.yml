@@ -21,6 +21,29 @@ tags:
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
+  - SEC Filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-Time Streaming
+  - WebSocket
+  - FIX
+  - Financial Data
+  - Market Data
+  - Stocks
+  - DeFi
+  - Real-Time
+  - REST API
+  - MCP Server
+  - agent-native
+tags_raw:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
   - SEC filings
   - XBRL
   - Fundamentals
@@ -55,6 +78,21 @@ apis:
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
+  - SEC Filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-Time Streaming
+  - WebSocket
+  - FIX
+  tags_raw:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
   - SEC filings
   - XBRL
   - Fundamentals
@@ -78,6 +116,21 @@ apis:
     first-party TypeScript and Python implementations.
   humanURL: https://sifting.io/integrations/mcp
   tags:
+  - Financial market data
+  - Stocks/equities
+  - Forex
+  - Cryptocurrency
+  - DeFi/on-chain
+  - Commodities
+  - SEC Filings
+  - XBRL
+  - Fundamentals
+  - Fintech
+  - Quant/trading infrastructure
+  - Real-Time Streaming
+  - WebSocket
+  - FIX
+  tags_raw:
   - Financial market data
   - Stocks/equities
   - Forex
@@ -193,6 +246,8 @@ apis:
   humanURL: https://sifting.io/docs
   baseURL: https://api.sifting.io
   tags:
+  - Economic Calendar
+  tags_raw:
   - EconomicCalendar
   properties:
   - type: OpenAPI
