@@ -9,6 +9,19 @@ description: >-
   hours and holiday calendars; derived data covers technical signals and on-chain TVL. Official Go, Python
   and JavaScript SDKs, an open-source (locally-run) MCP server with 36 tools, and a provider-published agent
   ruleset. Operated by SaltingIO LLC, a Wyoming company; explicitly not a broker, exchange or trading venue.
+deliveryModel:
+  model: unknown
+  open_source: unknown
+  commercial: true
+  callable_host: true
+  label: Delivery model not determined — needs a product licence on record
+  confidence: low
+  source:
+  - openapi
+  - pricing
+  - repository-unlicensed
+  generated: '2026-08-28'
+  method: derived
 image: https://sifting.io/logo.svg
 url: https://raw.githubusercontent.com/api-evangelist/siftingio/refs/heads/main/apis.yml
 created: '2026-08-17'
