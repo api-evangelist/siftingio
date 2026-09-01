@@ -34,21 +34,21 @@ tags:
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
-  - SEC filings
+  - SEC Filings
   - XBRL
   - Fundamentals
   - Fintech
   - Quant/trading infrastructure
-  - Real-time streaming
+  - Real-Time Streaming
   - WebSocket
   - FIX
-  - financial data
+  - Financial Data
   - Market Data
-  - stocks
+  - Stocks
   - DeFi
   - Real-Time
   - REST API
-  - MCP server
+  - MCP Server
   - agent-native
 tags_raw:
   - Financial market data
@@ -91,12 +91,12 @@ apis:
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
-  - SEC filings
+  - SEC Filings
   - XBRL
   - Fundamentals
   - Fintech
   - Quant/trading infrastructure
-  - Real-time streaming
+  - Real-Time Streaming
   - WebSocket
   - FIX
   tags_raw:
@@ -135,12 +135,12 @@ apis:
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
-  - SEC filings
+  - SEC Filings
   - XBRL
   - Fundamentals
   - Fintech
   - Quant/trading infrastructure
-  - Real-time streaming
+  - Real-Time Streaming
   - WebSocket
   - FIX
   tags_raw:
@@ -259,7 +259,7 @@ apis:
   humanURL: https://sifting.io/docs
   baseURL: https://api.sifting.io
   tags:
-  - EconomicCalendar
+  - Economic Calendar
   tags_raw:
   - EconomicCalendar
   properties:
@@ -409,6 +409,9 @@ generated:
   confidence: 90
   at: '2026-08-17T11:48:02.881Z'
 common:
+- type: License
+  name: MIT
+  url: https://github.com/SiftingIO/siftingio-mcp/blob/main/LICENSE
 - type: AgenticAccess
   url: agentic-access/siftingio-agentic-access.yml
 - type: DomainSecurity
