@@ -139,10 +139,10 @@ apis:
     url: https://sifting.io/docs/fix-api
 - name: SiftingIO MCP Server
   description: >-
-    LOCALLY-RUN MCP server, not a hosted endpoint. The client launches it (`npx -y siftingio-mcp`, or the
-    Python package) and it runs on the user's own machine, reading the key from SIFTING_API_KEY. 36 tools
-    cover forex, crypto, stocks, commodities, SEC fundamentals and on-chain DEX data. MIT licensed, with
-    first-party TypeScript and Python implementations.
+    LOCALLY-RUN MCP server, not a hosted endpoint. The client launches it (`npx -y siftingio-mcp`, or
+    the Python package) and it runs on the user's own machine, reading the key from SIFTING_API_KEY. 36
+    tools cover forex, crypto, stocks, commodities, SEC fundamentals and on-chain DEX data. MIT licensed,
+    with first-party TypeScript and Python implementations.
   humanURL: https://sifting.io/integrations/mcp
   tags:
   - Financial market data
@@ -269,28 +269,6 @@ apis:
     url: https://sifting.io/llms.txt
   - type: Documentation
     url: https://sifting.io/integrations/mcp
-- aid: siftingio:siftingio-economiccalendar-api
-  name: SiftingIO Economic Calendar API
-  description: US macro economic events.
-  humanURL: https://sifting.io/docs
-  baseURL: https://api.sifting.io
-  tags:
-  - Economic Calendar
-  tags_raw:
-  - EconomicCalendar
-  properties:
-  - type: OpenAPI
-    url: openapi/siftingio-economiccalendar-api-openapi.yml
-  - type: PostmanCollection
-    url: https://www.postman.com/siftingio/siftingio-market-data-api
-  - type: Documentation
-    url: https://sifting.io/docs
-  - type: Documentation
-    url: https://sifting.io/docs/quickstart
-  - type: LLMsTxt
-    url: https://sifting.io/llms.txt
-  - type: Documentation
-    url: https://sifting.io/integrations/mcp
 - aid: siftingio:siftingio-filers-api
   name: SiftingIO Filers API
   description: 13F institutional holdings.
@@ -402,6 +380,26 @@ apis:
   properties:
   - type: OpenAPI
     url: openapi/siftingio-stocks-api-openapi.yml
+  - type: PostmanCollection
+    url: https://www.postman.com/siftingio/siftingio-market-data-api
+  - type: Documentation
+    url: https://sifting.io/docs
+  - type: Documentation
+    url: https://sifting.io/docs/quickstart
+  - type: LLMsTxt
+    url: https://sifting.io/llms.txt
+  - type: Documentation
+    url: https://sifting.io/integrations/mcp
+- aid: siftingio:siftingio-economic-calendar-api
+  name: SiftingIO Economic Calendar API
+  description: US macro economic events.
+  humanURL: https://sifting.io/docs/fix-api
+  baseURL: wss://stream.sifting.io/ws/v1
+  tags:
+  - Economic Calendar
+  properties:
+  - type: OpenAPI
+    url: openapi/siftingio-economic-calendar-api-openapi.yml
   - type: PostmanCollection
     url: https://www.postman.com/siftingio/siftingio-market-data-api
   - type: Documentation
