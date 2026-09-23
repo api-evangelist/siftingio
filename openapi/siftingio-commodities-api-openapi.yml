@@ -8,26 +8,7 @@ info:
 
     historical OHLCV bars, market calendars, DEX wallet portfolios, and the
 
-    US economic calendar.
-
-
-    Authentication is by API key, sent as the `X-API-Key` header (preferred)
-
-    or the `api_key` query parameter.
-
-
-    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
-
-    (they respond `406` otherwise): the screener, both financials endpoints,
-
-    all historical-bars endpoints, and the market snapshot.
-
-
-    This document describes the data plane only. Account, billing, and auth
-
-    (the `/ops/v1` control plane) are out of scope.
-
-    '
+    US economic calendar.'
   license:
     name: MIT
     identifier: MIT
@@ -62,9 +43,7 @@ paths:
 
         `data_unavailable` and an `earliest` field carrying the first
 
-        date it can serve.
-
-        '
+        date it can serve.'
       parameters:
       - $ref: '#/components/parameters/AcceptEncodingGzip'
       - name: symbol
@@ -104,70 +83,12 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
-  schemas:
-    Bar:
-      type: object
-      properties:
-        t:
-          type: integer
-          format: int64
-          description: Bar open time, Unix epoch ms.
-        o:
-          type: number
-        h:
-          type: number
-        l:
-          type: number
-        c:
-          type: number
-        v:
-          type: number
-    BarsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Bar'
-        meta:
-          $ref: '#/components/schemas/BarsMeta'
-    BarsMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        next_cursor:
-          type: string
-        symbol:
-          type: string
-        interval:
-          type: string
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
   parameters:
-    Cursor:
-      name: cursor
+    BarStartRequired:
+      name: start
       in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
-    BarEnd:
-      name: end
-      in: query
-      description: Inclusive upper bound. Default now.
+      required: true
+      description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
       schema:
         type: string
     BarOrder:
@@ -182,11 +103,16 @@ components:
         - asc
         - desc
         default: asc
-    BarStartRequired:
-      name: start
+    BarEnd:
+      name: end
       in: query
-      required: true
-      description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
       schema:
         type: string
     BarIntervalCommodities:
@@ -217,18 +143,6 @@ components:
         enum:
         - gzip
   responses:
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    DataUnavailable:
-      description: No upstream has data for the requested window.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
     TooManyRequests:
       description: Rate limit exceeded.
       headers:
@@ -240,8 +154,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
+    DataUnavailable:
+      description: No upstream has data for the requested window.
       content:
         application/json:
           schema:
@@ -252,12 +166,77 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     GzipRequired:
       description: 'This endpoint requires `Accept-Encoding: gzip`.'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+  schemas:
+    Bar:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        o:
+          type: number
+        h:
+          type: number
+        l:
+          type: number
+        c:
+          type: number
+        v:
+          type: number
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

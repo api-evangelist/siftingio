@@ -8,26 +8,7 @@ info:
 
     historical OHLCV bars, market calendars, DEX wallet portfolios, and the
 
-    US economic calendar.
-
-
-    Authentication is by API key, sent as the `X-API-Key` header (preferred)
-
-    or the `api_key` query parameter.
-
-
-    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
-
-    (they respond `406` otherwise): the screener, both financials endpoints,
-
-    all historical-bars endpoints, and the market snapshot.
-
-
-    This document describes the data plane only. Account, billing, and auth
-
-    (the `/ops/v1` control plane) are out of scope.
-
-    '
+    US economic calendar.'
   license:
     name: MIT
     identifier: MIT
@@ -41,13 +22,13 @@ security:
 - ApiKeyHeader: []
 - ApiKeyQuery: []
 tags:
-- name: EconomicCalendar
+- name: Economic Calendar
   description: US macro economic events.
 paths:
   /v1/fnd/economic-calendar:
     get:
       tags:
-      - EconomicCalendar
+      - Economic Calendar
       operationId: getEconomicCalendar
       summary: US economic calendar
       parameters:
@@ -112,8 +93,13 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   responses:
-    BadRequest:
-      description: Invalid request parameters.
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
       content:
         application/json:
           schema:
@@ -124,13 +110,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
+    BadRequest:
+      description: Invalid request parameters.
       content:
         application/json:
           schema:
@@ -150,18 +131,6 @@ components:
           type: number
           description: Present on rate-limit errors.
       additionalProperties: true
-    EconomicCalendarResponse:
-      type: object
-      properties:
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/EconomicEvent'
-        count:
-          type: integer
-        filter:
-          type: object
-          additionalProperties: true
     EconomicEvent:
       type: object
       properties:
@@ -197,6 +166,18 @@ components:
           - string
           - 'null'
           format: date-time
+    EconomicCalendarResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EconomicEvent'
+        count:
+          type: integer
+        filter:
+          type: object
+          additionalProperties: true
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

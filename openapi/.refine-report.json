@@ -1,7 +1,7 @@
 {
   "provider": "siftingio",
   "sources": [
-    "siftingio-openapi.yaml"
+    "_original/siftingio-openapi.yaml"
   ],
   "outputs": [
     "siftingio-commodities-api-openapi.yml",
@@ -17,13 +17,27 @@
     "siftingio-stocks-api-openapi.yml"
   ],
   "archived": [
-    "archived openapi/siftingio-openapi.yaml"
+    "deleted 1 superseded output(s) from the previous generation"
   ],
   "errors": [],
   "warnings": [],
   "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
     "siftingio-openapi.yaml: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
-    "apis.yml register: written (+11 apis, 13 total)"
+    "superseded outputs removed: siftingio-economic-calendar-api-openapi.yml",
+    "apis.yml register: written (+1 apis, 13 total)"
   ],
-  "skipped": []
+  "skipped": [
+    "siftingio-commodities-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-convert-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-crypto-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-dex-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-economic-calendar-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-filers-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-forex-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-live-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-markets-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-signals-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "siftingio-stocks-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }

@@ -8,26 +8,7 @@ info:
 
     historical OHLCV bars, market calendars, DEX wallet portfolios, and the
 
-    US economic calendar.
-
-
-    Authentication is by API key, sent as the `X-API-Key` header (preferred)
-
-    or the `api_key` query parameter.
-
-
-    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
-
-    (they respond `406` otherwise): the screener, both financials endpoints,
-
-    all historical-bars endpoints, and the market snapshot.
-
-
-    This document describes the data plane only. Account, billing, and auth
-
-    (the `/ops/v1` control plane) are out of scope.
-
-    '
+    US economic calendar.'
   license:
     name: MIT
     identifier: MIT
@@ -98,9 +79,7 @@ paths:
       - Live
       operationId: getLastClose
       summary: Previous close
-      description: 'The most recent previous close for one instrument. For crypto/forex/ commodities this is the engine''s fair price frozen at the last 00:00 UTC boundary; for stocks it is the official exchange session close. The response is immutable until the next close, so it is edge-cacheable (Cache-Control max-age expires at the next boundary) unlike the live trade/quote reads.
-
-        '
+      description: The most recent previous close for one instrument. For crypto/forex/ commodities this is the engine's fair price frozen at the last 00:00 UTC boundary; for stocks it is the official exchange session close. The response is immutable until the next close, so it is edge-cacheable (Cache-Control max-age expires at the next boundary) unlike the live trade/quote reads.
       parameters:
       - $ref: '#/components/parameters/VenuePrevClose'
       - $ref: '#/components/parameters/Symbol'
@@ -153,9 +132,7 @@ paths:
 
         venue currently publishes, or scope it to a watchlist with `symbols`.
 
-        Not paginated: a snapshot is the complete picture at `meta.as_of`.
-
-        '
+        Not paginated: a snapshot is the complete picture at `meta.as_of`.'
       parameters:
       - $ref: '#/components/parameters/AcceptEncodingGzip'
       - $ref: '#/components/parameters/Venue'
@@ -187,70 +164,86 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
-  parameters:
-    Symbol:
-      name: symbol
-      in: path
-      required: true
-      description: Symbol, normalized to the venue's canonical form.
-      schema:
-        type: string
-    Chain:
-      name: chain
-      in: path
-      required: true
-      description: EVM chain.
-      schema:
-        type: string
-        enum:
-        - eth
-        - base
-        - arbitrum
-        - bsc
-        - polygon
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
-      required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
-      schema:
-        type: string
-        enum:
-        - gzip
-    Pair:
-      name: pair
-      in: path
-      required: true
-      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
-      schema:
-        type: string
-    Venue:
-      name: venue
-      in: path
-      required: true
-      description: Market venue.
-      schema:
-        type: string
-        enum:
-        - stocks
-        - crypto
-        - forex
-        - dex
-    VenuePrevClose:
-      name: venue
-      in: path
-      required: true
-      description: 'Market venue for previous close. DEX has no previous-close product; commodities does (unlike the live trade/quote venues).
-
-        '
-      schema:
-        type: string
-        enum:
-        - stocks
-        - crypto
-        - forex
-        - commodities
+  responses:
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Upstream or snapshot temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    SnapshotResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotEntry'
+        meta:
+          type: object
+          properties:
+            as_of:
+              type: string
+              format: date-time
+            venue:
+              type: string
+            count:
+              type: integer
     LastClose:
       type: object
       properties:
@@ -267,47 +260,6 @@ components:
           type: integer
           format: int64
           description: Close-boundary Unix epoch milliseconds.
-    LastTVL:
-      type: object
-      properties:
-        chain:
-          type: string
-        pair:
-          type: string
-        usd:
-          type: string
-        r0:
-          type: string
-          description: Reserve of token0.
-        r1:
-          type: string
-          description: Reserve of token1.
-        n:
-          type: integer
-          description: Pools aggregated.
-        v:
-          type: integer
-        t:
-          type: integer
-          format: int64
-    LastQuote:
-      type: object
-      properties:
-        b:
-          type: string
-          description: Bid price.
-        B:
-          type: string
-          description: Bid size.
-        a:
-          type: string
-          description: Ask price.
-        A:
-          type: string
-          description: Ask size.
-        t:
-          type: integer
-          format: int64
     SnapshotEntry:
       type: object
       properties:
@@ -336,23 +288,47 @@ components:
           type: integer
           format: int64
           description: Unix epoch milliseconds.
-    SnapshotResponse:
+    LastQuote:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SnapshotEntry'
-        meta:
-          type: object
-          properties:
-            as_of:
-              type: string
-              format: date-time
-            venue:
-              type: string
-            count:
-              type: integer
+        b:
+          type: string
+          description: Bid price.
+        B:
+          type: string
+          description: Bid size.
+        a:
+          type: string
+          description: Ask price.
+        A:
+          type: string
+          description: Ask size.
+        t:
+          type: integer
+          format: int64
+    LastTVL:
+      type: object
+      properties:
+        chain:
+          type: string
+        pair:
+          type: string
+        usd:
+          type: string
+        r0:
+          type: string
+          description: Reserve of token0.
+        r1:
+          type: string
+          description: Reserve of token1.
+        n:
+          type: integer
+          description: Pools aggregated.
+        v:
+          type: integer
+        t:
+          type: integer
+          format: int64
     LastTrade:
       type: object
       properties:
@@ -369,68 +345,69 @@ components:
           type: integer
           format: int64
           description: Unix epoch milliseconds.
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-  responses:
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServiceUnavailable:
-      description: Upstream or snapshot temporarily unavailable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+  parameters:
+    Venue:
+      name: venue
+      in: path
+      required: true
+      description: Market venue.
+      schema:
+        type: string
+        enum:
+        - stocks
+        - crypto
+        - forex
+        - dex
+    Pair:
+      name: pair
+      in: path
+      required: true
+      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
+      schema:
+        type: string
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+    Symbol:
+      name: symbol
+      in: path
+      required: true
+      description: Symbol, normalized to the venue's canonical form.
+      schema:
+        type: string
+    VenuePrevClose:
+      name: venue
+      in: path
+      required: true
+      description: 'Market venue for previous close. DEX has no previous-close product; commodities does (unlike the live trade/quote venues).
+
+        '
+      schema:
+        type: string
+        enum:
+        - stocks
+        - crypto
+        - forex
+        - commodities
+    Chain:
+      name: chain
+      in: path
+      required: true
+      description: EVM chain.
+      schema:
+        type: string
+        enum:
+        - eth
+        - base
+        - arbitrum
+        - bsc
+        - polygon
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

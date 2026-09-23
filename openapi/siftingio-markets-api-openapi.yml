@@ -8,26 +8,7 @@ info:
 
     historical OHLCV bars, market calendars, DEX wallet portfolios, and the
 
-    US economic calendar.
-
-
-    Authentication is by API key, sent as the `X-API-Key` header (preferred)
-
-    or the `api_key` query parameter.
-
-
-    Several endpoints return large payloads and **require** `Accept-Encoding: gzip`
-
-    (they respond `406` otherwise): the screener, both financials endpoints,
-
-    all historical-bars endpoints, and the market snapshot.
-
-
-    This document describes the data plane only. Account, billing, and auth
-
-    (the `/ops/v1` control plane) are out of scope.
-
-    '
+    US economic calendar.'
   license:
     name: MIT
     identifier: MIT
@@ -158,23 +139,78 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
+  parameters:
+    Region:
+      name: region
+      in: query
+      description: Region filter.
+      schema:
+        type: string
+        enum:
+        - north_america
+        - europe
+        - asia_pacific
+        - latam
+        - global
+    Market:
+      name: market
+      in: path
+      required: true
+      description: Market slug, e.g. `us_equities`, `nyse`, `forex`, `crypto`.
+      schema:
+        type: string
+  responses:
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
-    HoursSpec:
+    Error:
       type: object
+      required:
+      - error
       properties:
-        open:
+        error:
           type: string
-        close:
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
           type: string
-        breaks:
-          type: array
-          items:
-            $ref: '#/components/schemas/HoursBreak'
-    MarketHoursResponse:
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    MarketsStatusAllResponse:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/MarketHours'
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketStatus'
         meta:
           type: object
           additionalProperties: true
@@ -191,39 +227,33 @@ components:
         as_of:
           type: string
           format: date
-    MarketsListResponse:
+    CalendarDay:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Market'
-        meta:
-          type: object
-          additionalProperties: true
-    MarketHours:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        kind:
+          type: string
+          description: full_day_holiday | half_day_holiday
+        state:
+          type: string
+        early_close:
+          type: string
+          format: date-time
+    HoursSpec:
       type: object
       properties:
-        market:
+        open:
           type: string
-        type:
+        close:
           type: string
-        timezone:
-          type: string
-        hours:
-          $ref: '#/components/schemas/MarketHoursBlock'
-        opens_at:
-          type: string
-        closes_at:
-          type: string
-        sessions:
+        breaks:
           type: array
           items:
-            $ref: '#/components/schemas/ForexSession'
-        exchanges:
-          type: array
-          items:
-            type: string
+            $ref: '#/components/schemas/HoursBreak'
     HoursBreak:
       type: object
       properties:
@@ -257,83 +287,6 @@ components:
           type: string
         stats:
           $ref: '#/components/schemas/MarketStats'
-    MarketCalendarResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/CalendarDay'
-        meta:
-          type: object
-          additionalProperties: true
-    MarketsStatusAllResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/MarketStatus'
-        meta:
-          type: object
-          additionalProperties: true
-    ForexSession:
-      type: object
-      properties:
-        name:
-          type: string
-        start:
-          type: string
-          description: HH:MM UTC
-        end:
-          type: string
-    CalendarDay:
-      type: object
-      properties:
-        date:
-          type: string
-          format: date
-        name:
-          type: string
-        kind:
-          type: string
-          description: full_day_holiday | half_day_holiday
-        state:
-          type: string
-        early_close:
-          type: string
-          format: date-time
-    MarketHoursBlock:
-      type: object
-      properties:
-        regular:
-          $ref: '#/components/schemas/HoursSpec'
-        pre_market:
-          $ref: '#/components/schemas/HoursSpec'
-        post_market:
-          $ref: '#/components/schemas/HoursSpec'
-    MarketStatusResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/MarketStatus'
-        meta:
-          type: object
-          additionalProperties: true
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
     Market:
       type: object
       properties:
@@ -354,56 +307,84 @@ components:
             type: string
         stats:
           $ref: '#/components/schemas/MarketStats'
-  parameters:
-    Region:
-      name: region
-      in: query
-      description: Region filter.
-      schema:
-        type: string
-        enum:
-        - north_america
-        - europe
-        - asia_pacific
-        - latam
-        - global
-    Market:
-      name: market
-      in: path
-      required: true
-      description: Market slug, e.g. `us_equities`, `nyse`, `forex`, `crypto`.
-      schema:
-        type: string
-  responses:
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+    MarketCalendarResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDay'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketHours:
+      type: object
+      properties:
+        market:
+          type: string
+        type:
+          type: string
+        timezone:
+          type: string
+        hours:
+          $ref: '#/components/schemas/MarketHoursBlock'
+        opens_at:
+          type: string
+        closes_at:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForexSession'
+        exchanges:
+          type: array
+          items:
+            type: string
+    ForexSession:
+      type: object
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          description: HH:MM UTC
+        end:
+          type: string
+    MarketHoursBlock:
+      type: object
+      properties:
+        regular:
+          $ref: '#/components/schemas/HoursSpec'
+        pre_market:
+          $ref: '#/components/schemas/HoursSpec'
+        post_market:
+          $ref: '#/components/schemas/HoursSpec'
+    MarketsListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketHoursResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketHours'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketStatusResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketStatus'
+        meta:
+          type: object
+          additionalProperties: true
   securitySchemes:
     ApiKeyHeader:
       type: apiKey
