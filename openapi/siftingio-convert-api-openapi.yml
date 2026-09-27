@@ -65,6 +65,43 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
+  schemas:
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    ConvertResult:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Echo of the source symbol.
+        to:
+          type: string
+          description: Echo of the target symbol.
+        amount:
+          type: number
+          description: Amount sent in.
+        rate:
+          type: number
+          description: Rate applied; amount × rate = result.
+        result:
+          type: number
+          description: Converted amount.
+        t:
+          type: integer
+          format: int64
+          description: Timestamp of the underlying market rate (Unix epoch ms).
   responses:
     TooManyRequests:
       description: Rate limit exceeded.
@@ -89,43 +126,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-  schemas:
-    ConvertResult:
-      type: object
-      properties:
-        from:
-          type: string
-          description: Echo of the source symbol.
-        to:
-          type: string
-          description: Echo of the target symbol.
-        amount:
-          type: number
-          description: Amount sent in.
-        rate:
-          type: number
-          description: Rate applied; amount × rate = result.
-        result:
-          type: number
-          description: Converted amount.
-        t:
-          type: integer
-          format: int64
-          description: Timestamp of the underlying market rate (Unix epoch ms).
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

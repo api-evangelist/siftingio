@@ -113,6 +113,151 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 components:
+  schemas:
+    Bar:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        o:
+          type: number
+        h:
+          type: number
+        l:
+          type: number
+        c:
+          type: number
+        v:
+          type: number
+    WalletPortfolio:
+      type: object
+      properties:
+        chain:
+          type: string
+        address:
+          type: string
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletToken'
+        count:
+          type: integer
+        updated_at:
+          type: integer
+          format: int64
+          description: Unix epoch seconds.
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    WalletToken:
+      type: object
+      properties:
+        contract_address:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        decimals:
+          type: integer
+        logo:
+          type: string
+        raw_balance:
+          type: string
+          description: Integer balance in base units.
+        balance:
+          type: string
+          description: Human-readable balance.
+        native:
+          type: boolean
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    DataUnavailable:
+      description: No upstream has data for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Upstream or snapshot temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   parameters:
     BarStartRequired:
       name: start
@@ -139,27 +284,6 @@ components:
         - 1w
         - 1mo
         default: 1m
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
-      required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
-      schema:
-        type: string
-        enum:
-        - gzip
-    BarEnd:
-      name: end
-      in: query
-      description: Inclusive upper bound. Default now.
-      schema:
-        type: string
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
     Chain:
       name: chain
       in: path
@@ -173,151 +297,27 @@ components:
         - arbitrum
         - bsc
         - polygon
-  responses:
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    DataUnavailable:
-      description: No upstream has data for the requested window.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServiceUnavailable:
-      description: Upstream or snapshot temporarily unavailable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-  schemas:
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-    BarsMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        next_cursor:
-          type: string
-        symbol:
-          type: string
-        interval:
-          type: string
-    WalletPortfolio:
-      type: object
-      properties:
-        chain:
-          type: string
-        address:
-          type: string
-        tokens:
-          type: array
-          items:
-            $ref: '#/components/schemas/WalletToken'
-        count:
-          type: integer
-        updated_at:
-          type: integer
-          format: int64
-          description: Unix epoch seconds.
-    Bar:
-      type: object
-      properties:
-        t:
-          type: integer
-          format: int64
-          description: Bar open time, Unix epoch ms.
-        o:
-          type: number
-        h:
-          type: number
-        l:
-          type: number
-        c:
-          type: number
-        v:
-          type: number
-    BarsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Bar'
-        meta:
-          $ref: '#/components/schemas/BarsMeta'
-    WalletToken:
-      type: object
-      properties:
-        contract_address:
-          type: string
-        symbol:
-          type: string
-        name:
-          type: string
-        decimals:
-          type: integer
-        logo:
-          type: string
-        raw_balance:
-          type: string
-          description: Integer balance in base units.
-        balance:
-          type: string
-          description: Human-readable balance.
-        native:
-          type: boolean
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

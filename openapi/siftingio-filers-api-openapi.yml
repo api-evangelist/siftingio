@@ -54,6 +54,72 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
+  schemas:
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    Holdings:
+      type: object
+      properties:
+        filer_cik:
+          type: string
+        filer_name:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        total_value_usd:
+          type: number
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoldingPosition'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
+    HoldingPosition:
+      type: object
+      properties:
+        issuer:
+          type: string
+        security_type:
+          type: string
+        cusip:
+          type: string
+        value_usd:
+          type: number
+        shares:
+          type: number
+        shares_type:
+          type: string
+        discretion:
+          type: string
   responses:
     TooManyRequests:
       description: Rate limit exceeded.
@@ -78,79 +144,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-  schemas:
-    ListMeta:
-      type: object
-      properties:
-        next_cursor:
-          type: string
-          description: Cursor for the next page; absent on the last page.
-        as_of:
-          type: string
-          format: date-time
-        total:
-          type: integer
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-    HoldingPosition:
-      type: object
-      properties:
-        issuer:
-          type: string
-        security_type:
-          type: string
-        cusip:
-          type: string
-        value_usd:
-          type: number
-        shares:
-          type: number
-        shares_type:
-          type: string
-        discretion:
-          type: string
-    Holdings:
-      type: object
-      properties:
-        filer_cik:
-          type: string
-        filer_name:
-          type: string
-        accession:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        period_end:
-          type: string
-          format: date
-        total_value_usd:
-          type: number
-        positions:
-          type: array
-          items:
-            $ref: '#/components/schemas/HoldingPosition'
-        meta:
-          $ref: '#/components/schemas/ListMeta'
   parameters:
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
     Limit:
       name: limit
       in: query
@@ -159,6 +153,12 @@ components:
         type: integer
         default: 50
         maximum: 200
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey
