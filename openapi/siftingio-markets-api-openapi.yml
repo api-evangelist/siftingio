@@ -139,53 +139,16 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
-  responses:
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
-    CalendarDay:
+    MarketHoursBlock:
       type: object
       properties:
-        date:
-          type: string
-          format: date
-        name:
-          type: string
-        kind:
-          type: string
-          description: full_day_holiday | half_day_holiday
-        state:
-          type: string
-        early_close:
-          type: string
-          format: date-time
+        regular:
+          $ref: '#/components/schemas/HoursSpec'
+        pre_market:
+          $ref: '#/components/schemas/HoursSpec'
+        post_market:
+          $ref: '#/components/schemas/HoursSpec'
     MarketsStatusAllResponse:
       type: object
       properties:
@@ -196,66 +159,19 @@ components:
         meta:
           type: object
           additionalProperties: true
-    Market:
+    MarketStats:
       type: object
       properties:
-        market:
+        market_cap_usd:
+          type: integer
+          format: int64
+        listed_companies:
+          type: integer
+        currency:
           type: string
-        name:
+        as_of:
           type: string
-        type:
-          type: string
-          description: exchange | forex | crypto
-        timezone:
-          type: string
-        region:
-          type: string
-        exchanges:
-          type: array
-          items:
-            type: string
-        stats:
-          $ref: '#/components/schemas/MarketStats'
-    MarketHoursBlock:
-      type: object
-      properties:
-        regular:
-          $ref: '#/components/schemas/HoursSpec'
-        pre_market:
-          $ref: '#/components/schemas/HoursSpec'
-        post_market:
-          $ref: '#/components/schemas/HoursSpec'
-    MarketCalendarResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/CalendarDay'
-        meta:
-          type: object
-          additionalProperties: true
-    HoursSpec:
-      type: object
-      properties:
-        open:
-          type: string
-        close:
-          type: string
-        breaks:
-          type: array
-          items:
-            $ref: '#/components/schemas/HoursBreak'
-    ForexSession:
-      type: object
-      properties:
-        name:
-          type: string
-        start:
-          type: string
-          description: HH:MM UTC
-        end:
-          type: string
+          format: date
     Error:
       type: object
       required:
@@ -270,32 +186,6 @@ components:
           type: number
           description: Present on rate-limit errors.
       additionalProperties: true
-    MarketHoursResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/MarketHours'
-        meta:
-          type: object
-          additionalProperties: true
-    MarketStatusResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/MarketStatus'
-        meta:
-          type: object
-          additionalProperties: true
-    MarketsListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Market'
-        meta:
-          type: object
-          additionalProperties: true
     MarketStatus:
       type: object
       properties:
@@ -320,6 +210,88 @@ components:
           type: string
         stats:
           $ref: '#/components/schemas/MarketStats'
+    Market:
+      type: object
+      properties:
+        market:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          description: exchange | forex | crypto
+        timezone:
+          type: string
+        region:
+          type: string
+        exchanges:
+          type: array
+          items:
+            type: string
+        stats:
+          $ref: '#/components/schemas/MarketStats'
+    MarketHoursResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketHours'
+        meta:
+          type: object
+          additionalProperties: true
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        kind:
+          type: string
+          description: full_day_holiday | half_day_holiday
+        state:
+          type: string
+        early_close:
+          type: string
+          format: date-time
+    MarketStatusResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MarketStatus'
+        meta:
+          type: object
+          additionalProperties: true
+    ForexSession:
+      type: object
+      properties:
+        name:
+          type: string
+        start:
+          type: string
+          description: HH:MM UTC
+        end:
+          type: string
+    HoursBreak:
+      type: object
+      properties:
+        open:
+          type: string
+          description: HH:MM
+        close:
+          type: string
+          description: HH:MM
+    HoursSpec:
+      type: object
+      properties:
+        open:
+          type: string
+        close:
+          type: string
+        breaks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoursBreak'
     MarketHours:
       type: object
       properties:
@@ -343,28 +315,26 @@ components:
           type: array
           items:
             type: string
-    HoursBreak:
+    MarketsListResponse:
       type: object
       properties:
-        open:
-          type: string
-          description: HH:MM
-        close:
-          type: string
-          description: HH:MM
-    MarketStats:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Market'
+        meta:
+          type: object
+          additionalProperties: true
+    MarketCalendarResponse:
       type: object
       properties:
-        market_cap_usd:
-          type: integer
-          format: int64
-        listed_companies:
-          type: integer
-        currency:
-          type: string
-        as_of:
-          type: string
-          format: date
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarDay'
+        meta:
+          type: object
+          additionalProperties: true
   parameters:
     Market:
       name: market
@@ -385,6 +355,36 @@ components:
         - asia_pacific
         - latam
         - global
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

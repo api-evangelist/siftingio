@@ -114,6 +114,41 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
 components:
   schemas:
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
     Bar:
       type: object
       properties:
@@ -131,49 +166,6 @@ components:
           type: number
         v:
           type: number
-    WalletPortfolio:
-      type: object
-      properties:
-        chain:
-          type: string
-        address:
-          type: string
-        tokens:
-          type: array
-          items:
-            $ref: '#/components/schemas/WalletToken'
-        count:
-          type: integer
-        updated_at:
-          type: integer
-          format: int64
-          description: Unix epoch seconds.
-    BarsMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        next_cursor:
-          type: string
-        symbol:
-          type: string
-        interval:
-          type: string
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
     WalletToken:
       type: object
       properties:
@@ -195,16 +187,42 @@ components:
           description: Human-readable balance.
         native:
           type: boolean
-    BarsResponse:
+    WalletPortfolio:
       type: object
       properties:
-        data:
+        chain:
+          type: string
+        address:
+          type: string
+        tokens:
           type: array
           items:
-            $ref: '#/components/schemas/Bar'
-        meta:
-          $ref: '#/components/schemas/BarsMeta'
+            $ref: '#/components/schemas/WalletToken'
+        count:
+          type: integer
+        updated_at:
+          type: integer
+          format: int64
+          description: Unix epoch seconds.
   responses:
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Upstream or snapshot temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    DataUnavailable:
+      description: No upstream has data for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     TooManyRequests:
       description: Rate limit exceeded.
       headers:
@@ -216,14 +234,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    DataUnavailable:
-      description: No upstream has data for the requested window.
+    BadRequest:
+      description: Invalid request parameters.
       content:
         application/json:
           schema:
@@ -240,25 +252,32 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServiceUnavailable:
-      description: Upstream or snapshot temporarily unavailable.
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
   parameters:
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    Chain:
+      name: chain
+      in: path
+      required: true
+      description: EVM chain.
+      schema:
+        type: string
+        enum:
+        - eth
+        - base
+        - arbitrum
+        - bsc
+        - polygon
     BarStartRequired:
       name: start
       in: query
@@ -284,23 +303,10 @@ components:
         - 1w
         - 1mo
         default: 1m
-    Chain:
-      name: chain
-      in: path
-      required: true
-      description: EVM chain.
-      schema:
-        type: string
-        enum:
-        - eth
-        - base
-        - arbitrum
-        - bsc
-        - polygon
-    BarEnd:
-      name: end
+    Cursor:
+      name: cursor
       in: query
-      description: Inclusive upper bound. Default now.
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
       schema:
         type: string
     AcceptEncodingGzip:
@@ -312,12 +318,6 @@ components:
         type: string
         enum:
         - gzip
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

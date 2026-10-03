@@ -54,7 +54,50 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Page size. Default 50, max 200.
+      schema:
+        type: integer
+        default: 50
+        maximum: 200
   schemas:
+    HoldingPosition:
+      type: object
+      properties:
+        issuer:
+          type: string
+        security_type:
+          type: string
+        cusip:
+          type: string
+        value_usd:
+          type: number
+        shares:
+          type: number
+        shares_type:
+          type: string
+        discretion:
+          type: string
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
     Error:
       type: object
       required:
@@ -92,34 +135,6 @@ components:
             $ref: '#/components/schemas/HoldingPosition'
         meta:
           $ref: '#/components/schemas/ListMeta'
-    ListMeta:
-      type: object
-      properties:
-        next_cursor:
-          type: string
-          description: Cursor for the next page; absent on the last page.
-        as_of:
-          type: string
-          format: date-time
-        total:
-          type: integer
-    HoldingPosition:
-      type: object
-      properties:
-        issuer:
-          type: string
-        security_type:
-          type: string
-        cusip:
-          type: string
-        value_usd:
-          type: number
-        shares:
-          type: number
-        shares_type:
-          type: string
-        discretion:
-          type: string
   responses:
     TooManyRequests:
       description: Rate limit exceeded.
@@ -144,21 +159,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-  parameters:
-    Limit:
-      name: limit
-      in: query
-      description: Page size. Default 50, max 200.
-      schema:
-        type: integer
-        default: 50
-        maximum: 200
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

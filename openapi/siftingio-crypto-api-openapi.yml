@@ -75,6 +75,27 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   schemas:
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
     Error:
       type: object
       required:
@@ -106,28 +127,13 @@ components:
           type: number
         v:
           type: number
-    BarsMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        next_cursor:
-          type: string
-        symbol:
-          type: string
-        interval:
-          type: string
-    BarsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Bar'
-        meta:
-          $ref: '#/components/schemas/BarsMeta'
   responses:
+    DataUnavailable:
+      description: No upstream has data for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     TooManyRequests:
       description: Rate limit exceeded.
       headers:
@@ -145,8 +151,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    DataUnavailable:
-      description: No upstream has data for the requested window.
+    BadRequest:
+      description: Invalid request parameters.
       content:
         application/json:
           schema:
@@ -163,12 +169,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   parameters:
     BarStartRequired:
       name: start
@@ -177,10 +177,10 @@ components:
       description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
       schema:
         type: string
-    BarEnd:
-      name: end
+    Cursor:
+      name: cursor
       in: query
-      description: Inclusive upper bound. Default now.
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
       schema:
         type: string
     BarInterval:
@@ -201,12 +201,6 @@ components:
         - 1w
         - 1mo
         default: 1m
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
     AcceptEncodingGzip:
       name: Accept-Encoding
       in: header
@@ -216,6 +210,12 @@ components:
         type: string
         enum:
         - gzip
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

@@ -121,77 +121,21 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
-  responses:
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    InsufficientHistory:
-      description: Not enough bars to compute a signal for this symbol and interval.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
-    SignalHistoryResponse:
+    Error:
       type: object
+      required:
+      - error
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SignalPoint'
-        meta:
-          $ref: '#/components/schemas/SignalMeta'
-    SignalCounts:
-      type: object
-      description: Vote tally across every indicator returned.
-      properties:
-        buy:
-          type: integer
-        neutral:
-          type: integer
-        sell:
-          type: integer
-    SignalVerdict:
-      type: string
-      description: Decision-ready label. `score` runs -1 (strong_sell) to +1 (strong_buy).
-      enum:
-      - strong_sell
-      - sell
-      - neutral
-      - buy
-      - strong_buy
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
     LiveSignalResponse:
       type: object
       properties:
@@ -206,6 +150,58 @@ components:
       - buy
       - neutral
       - sell
+    SignalGroup:
+      type: object
+      description: One indicator group (oscillators or moving averages) with its own verdict.
+      properties:
+        signal:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Group score, -1 to +1.
+        indicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalIndicator'
+    SignalHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalPoint'
+        meta:
+          $ref: '#/components/schemas/SignalMeta'
+    SignalPrice:
+      type: object
+      properties:
+        close:
+          type: number
+        bar_status:
+          type: string
+          description: '`forming` (live tick folded into the current bar) or `closed` (last settled bar).'
+          enum:
+          - forming
+          - closed
+    SignalEvent:
+      type: string
+      description: A discrete marker that fired on a bar.
+      enum:
+      - golden_cross
+      - death_cross
+      - macd_cross_up
+      - macd_cross_down
+    LiveSignal:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/SignalSummary'
+        oscillators:
+          $ref: '#/components/schemas/SignalGroup'
+        moving_averages:
+          $ref: '#/components/schemas/SignalGroup'
+        price:
+          $ref: '#/components/schemas/SignalPrice'
     SignalPoint:
       type: object
       properties:
@@ -224,75 +220,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SignalEvent'
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-    SignalPrice:
-      type: object
-      properties:
-        close:
-          type: number
-        bar_status:
-          type: string
-          description: '`forming` (live tick folded into the current bar) or `closed` (last settled bar).'
-          enum:
-          - forming
-          - closed
-    SignalSummary:
-      type: object
-      properties:
-        signal:
-          $ref: '#/components/schemas/SignalVerdict'
-        score:
-          type: number
-          description: Overall score, -1 to +1.
-        counts:
-          $ref: '#/components/schemas/SignalCounts'
-    SignalGroup:
-      type: object
-      description: One indicator group (oscillators or moving averages) with its own verdict.
-      properties:
-        signal:
-          $ref: '#/components/schemas/SignalVerdict'
-        score:
-          type: number
-          description: Group score, -1 to +1.
-        indicators:
-          type: array
-          items:
-            $ref: '#/components/schemas/SignalIndicator'
-    LiveSignal:
-      type: object
-      properties:
-        summary:
-          $ref: '#/components/schemas/SignalSummary'
-        oscillators:
-          $ref: '#/components/schemas/SignalGroup'
-        moving_averages:
-          $ref: '#/components/schemas/SignalGroup'
-        price:
-          $ref: '#/components/schemas/SignalPrice'
-    SignalMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        symbol:
-          type: string
-        interval:
-          type: string
     SignalIndicator:
       type: object
       properties:
@@ -313,15 +240,53 @@ components:
           description: Stochastic %D (Stochastic rows only).
         vote:
           $ref: '#/components/schemas/SignalVote'
-    SignalEvent:
+    SignalVerdict:
       type: string
-      description: A discrete marker that fired on a bar.
+      description: Decision-ready label. `score` runs -1 (strong_sell) to +1 (strong_buy).
       enum:
-      - golden_cross
-      - death_cross
-      - macd_cross_up
-      - macd_cross_down
+      - strong_sell
+      - sell
+      - neutral
+      - buy
+      - strong_buy
+    SignalSummary:
+      type: object
+      properties:
+        signal:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Overall score, -1 to +1.
+        counts:
+          $ref: '#/components/schemas/SignalCounts'
+    SignalMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        symbol:
+          type: string
+        interval:
+          type: string
+    SignalCounts:
+      type: object
+      description: Vote tally across every indicator returned.
+      properties:
+        buy:
+          type: integer
+        neutral:
+          type: integer
+        sell:
+          type: integer
   parameters:
+    Symbol:
+      name: symbol
+      in: path
+      required: true
+      description: Symbol, normalized to the venue's canonical form.
+      schema:
+        type: string
     VenueSignals:
       name: venue
       in: path
@@ -334,13 +299,48 @@ components:
         - crypto
         - forex
         - commodities
-    Symbol:
-      name: symbol
-      in: path
-      required: true
-      description: Symbol, normalized to the venue's canonical form.
-      schema:
-        type: string
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InsufficientHistory:
+      description: Not enough bars to compute a signal for this symbol and interval.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyHeader:
       type: apiKey
