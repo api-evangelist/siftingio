@@ -83,62 +83,21 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
-  schemas:
-    BarsMeta:
-      type: object
-      properties:
-        as_of:
-          type: string
-          format: date-time
-        next_cursor:
-          type: string
-        symbol:
-          type: string
-        interval:
-          type: string
-    BarsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Bar'
-        meta:
-          $ref: '#/components/schemas/BarsMeta'
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-    Bar:
-      type: object
-      properties:
-        t:
-          type: integer
-          format: int64
-          description: Bar open time, Unix epoch ms.
-        o:
-          type: number
-        h:
-          type: number
-        l:
-          type: number
-        c:
-          type: number
-        v:
-          type: number
   responses:
     DataUnavailable:
       description: No upstream has data for the requested window.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
       content:
         application/json:
           schema:
@@ -160,63 +119,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
     GzipRequired:
       description: 'This endpoint requires `Accept-Encoding: gzip`.'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   parameters:
-    BarStartRequired:
-      name: start
-      in: query
-      required: true
-      description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
-      schema:
-        type: string
     Cursor:
       name: cursor
       in: query
       description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
-      schema:
-        type: string
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
-      required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
-      schema:
-        type: string
-        enum:
-        - gzip
-    BarOrder:
-      name: order
-      in: query
-      description: 'Sort direction by time. `asc` (default) returns oldest→newest. `desc` returns newest→oldest and anchors the first page at the most recent bar, so fetching the latest N costs one request instead of paging the whole window. Supported on commodities and forex only; other historical routes are ascending-only.
-
-        '
-      schema:
-        type: string
-        enum:
-        - asc
-        - desc
-        default: asc
-    BarEnd:
-      name: end
-      in: query
-      description: Inclusive upper bound. Default now.
       schema:
         type: string
     BarIntervalCommodities:
@@ -237,6 +150,93 @@ components:
         - 1w
         - 1mo
         default: 1m
+    BarStartRequired:
+      name: start
+      in: query
+      required: true
+      description: Inclusive lower bound (YYYY-MM-DD or RFC3339). Required.
+      schema:
+        type: string
+    BarOrder:
+      name: order
+      in: query
+      description: 'Sort direction by time. `asc` (default) returns oldest→newest. `desc` returns newest→oldest and anchors the first page at the most recent bar, so fetching the latest N costs one request instead of paging the whole window. Supported on commodities and forex only; other historical routes are ascending-only.
+
+        '
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+    BarEnd:
+      name: end
+      in: query
+      description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+  schemas:
+    BarsMeta:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        next_cursor:
+          type: string
+        symbol:
+          type: string
+        interval:
+          type: string
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    BarsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bar'
+        meta:
+          $ref: '#/components/schemas/BarsMeta'
+    Bar:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        o:
+          type: number
+        h:
+          type: number
+        l:
+          type: number
+        c:
+          type: number
+        v:
+          type: number
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

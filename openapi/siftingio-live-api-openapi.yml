@@ -164,39 +164,118 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 components:
+  parameters:
+    Chain:
+      name: chain
+      in: path
+      required: true
+      description: EVM chain.
+      schema:
+        type: string
+        enum:
+        - eth
+        - base
+        - arbitrum
+        - bsc
+        - polygon
+    VenuePrevClose:
+      name: venue
+      in: path
+      required: true
+      description: 'Market venue for previous close. DEX has no previous-close product; commodities does (unlike the live trade/quote venues).
+
+        '
+      schema:
+        type: string
+        enum:
+        - stocks
+        - crypto
+        - forex
+        - commodities
+    Pair:
+      name: pair
+      in: path
+      required: true
+      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
+      schema:
+        type: string
+    Venue:
+      name: venue
+      in: path
+      required: true
+      description: Market venue.
+      schema:
+        type: string
+        enum:
+        - stocks
+        - crypto
+        - forex
+        - dex
+    Symbol:
+      name: symbol
+      in: path
+      required: true
+      description: Symbol, normalized to the venue's canonical form.
+      schema:
+        type: string
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Upstream or snapshot temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
-    LastQuote:
-      type: object
-      properties:
-        b:
-          type: string
-          description: Bid price.
-        B:
-          type: string
-          description: Bid size.
-        a:
-          type: string
-          description: Ask price.
-        A:
-          type: string
-          description: Ask size.
-        t:
-          type: integer
-          format: int64
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
     LastTVL:
       type: object
       properties:
@@ -217,6 +296,82 @@ components:
           description: Pools aggregated.
         v:
           type: integer
+        t:
+          type: integer
+          format: int64
+    LastClose:
+      type: object
+      properties:
+        s:
+          type: string
+          description: Symbol.
+        c:
+          type: string
+          description: Close price.
+        d:
+          type: string
+          description: UTC close date, YYYY-MM-DD.
+        t:
+          type: integer
+          format: int64
+          description: Close-boundary Unix epoch milliseconds.
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
+          type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
+    SnapshotEntry:
+      type: object
+      properties:
+        s:
+          type: string
+          description: Symbol.
+        p:
+          type: string
+          description: Last trade price.
+        P:
+          type: string
+          description: Last trade size (0 for forex/stocks).
+        b:
+          type: string
+          description: Best bid price.
+        B:
+          type: string
+          description: Best bid size (0 for forex/stocks).
+        a:
+          type: string
+          description: Best ask price.
+        A:
+          type: string
+          description: Best ask size (0 for forex/stocks).
+        t:
+          type: integer
+          format: int64
+          description: Unix epoch milliseconds.
+    LastQuote:
+      type: object
+      properties:
+        b:
+          type: string
+          description: Bid price.
+        B:
+          type: string
+          description: Bid size.
+        a:
+          type: string
+          description: Ask price.
+        A:
+          type: string
+          description: Ask size.
         t:
           type: integer
           format: int64
@@ -253,161 +408,6 @@ components:
               type: string
             count:
               type: integer
-    LastClose:
-      type: object
-      properties:
-        s:
-          type: string
-          description: Symbol.
-        c:
-          type: string
-          description: Close price.
-        d:
-          type: string
-          description: UTC close date, YYYY-MM-DD.
-        t:
-          type: integer
-          format: int64
-          description: Close-boundary Unix epoch milliseconds.
-    SnapshotEntry:
-      type: object
-      properties:
-        s:
-          type: string
-          description: Symbol.
-        p:
-          type: string
-          description: Last trade price.
-        P:
-          type: string
-          description: Last trade size (0 for forex/stocks).
-        b:
-          type: string
-          description: Best bid price.
-        B:
-          type: string
-          description: Best bid size (0 for forex/stocks).
-        a:
-          type: string
-          description: Best ask price.
-        A:
-          type: string
-          description: Best ask size (0 for forex/stocks).
-        t:
-          type: integer
-          format: int64
-          description: Unix epoch milliseconds.
-  parameters:
-    Venue:
-      name: venue
-      in: path
-      required: true
-      description: Market venue.
-      schema:
-        type: string
-        enum:
-        - stocks
-        - crypto
-        - forex
-        - dex
-    Symbol:
-      name: symbol
-      in: path
-      required: true
-      description: Symbol, normalized to the venue's canonical form.
-      schema:
-        type: string
-    Chain:
-      name: chain
-      in: path
-      required: true
-      description: EVM chain.
-      schema:
-        type: string
-        enum:
-        - eth
-        - base
-        - arbitrum
-        - bsc
-        - polygon
-    Pair:
-      name: pair
-      in: path
-      required: true
-      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
-      schema:
-        type: string
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
-      required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
-      schema:
-        type: string
-        enum:
-        - gzip
-    VenuePrevClose:
-      name: venue
-      in: path
-      required: true
-      description: 'Market venue for previous close. DEX has no previous-close product; commodities does (unlike the live trade/quote venues).
-
-        '
-      schema:
-        type: string
-        enum:
-        - stocks
-        - crypto
-        - forex
-        - commodities
-  responses:
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServiceUnavailable:
-      description: Upstream or snapshot temporarily unavailable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

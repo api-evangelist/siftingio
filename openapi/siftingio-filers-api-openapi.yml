@@ -69,35 +69,31 @@ components:
         type: integer
         default: 50
         maximum: 200
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
-    HoldingPosition:
-      type: object
-      properties:
-        issuer:
-          type: string
-        security_type:
-          type: string
-        cusip:
-          type: string
-        value_usd:
-          type: number
-        shares:
-          type: number
-        shares_type:
-          type: string
-        discretion:
-          type: string
-    ListMeta:
-      type: object
-      properties:
-        next_cursor:
-          type: string
-          description: Cursor for the next page; absent on the last page.
-        as_of:
-          type: string
-          format: date-time
-        total:
-          type: integer
     Error:
       type: object
       required:
@@ -135,30 +131,34 @@ components:
             $ref: '#/components/schemas/HoldingPosition'
         meta:
           $ref: '#/components/schemas/ListMeta'
-  responses:
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
+    HoldingPosition:
+      type: object
+      properties:
+        issuer:
+          type: string
+        security_type:
+          type: string
+        cusip:
+          type: string
+        value_usd:
+          type: number
+        shares:
+          type: number
+        shares_type:
+          type: string
+        discretion:
+          type: string
   securitySchemes:
     ApiKeyHeader:
       type: apiKey

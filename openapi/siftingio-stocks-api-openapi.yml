@@ -513,37 +513,6 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   schemas:
-    FilingSectionDetail:
-      type: object
-      properties:
-        ticker:
-          type: string
-        cik:
-          type: string
-        accession:
-          type: string
-        form:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        section:
-          type: string
-        content:
-          type: string
-    FilingRef:
-      type: object
-      properties:
-        accession:
-          type: string
-        form:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        period_end:
-          type: string
-          format: date
     ConceptBlock:
       type: object
       properties:
@@ -559,82 +528,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MetricValue'
-    Error:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: string
-          description: Machine-readable error code, e.g. `unknown_ticker`.
-        message:
-          type: string
-        retry_after:
-          type: number
-          description: Present on rate-limit errors.
-      additionalProperties: true
-    FinancialConcept:
-      type: object
-      properties:
-        ticker:
-          type: string
-        cik:
-          type: string
-        taxonomy:
-          type: string
-        concept:
-          type: string
-        label:
-          type: string
-        description:
-          type: string
-        series:
-          type: array
-          items:
-            $ref: '#/components/schemas/MetricValue'
-    CompensationResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/CompensationFiling'
-        meta:
-          $ref: '#/components/schemas/ListMeta'
-    InsidersResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/InsiderTransaction'
-        meta:
-          $ref: '#/components/schemas/ListMeta'
-    Filing:
-      type: object
-      properties:
-        accession:
-          type: string
-        form:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        period_end:
-          type: string
-          format: date
-        accepted_at:
-          type: string
-          format: date-time
-        items:
-          type: string
-          description: Comma-separated 8-K item codes.
-        primary_document_url:
-          type: string
-        description:
-          type: string
-        has_xbrl:
-          type: boolean
     BarsMeta:
       type: object
       properties:
@@ -647,15 +540,88 @@ components:
           type: string
         interval:
           type: string
-    OwnershipResponse:
+    EventFiling:
       type: object
       properties:
-        data:
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        accepted_at:
+          type: string
+          format: date-time
+        items:
           type: array
           items:
-            $ref: '#/components/schemas/OwnershipFiling'
-        meta:
-          $ref: '#/components/schemas/ListMeta'
+            type: string
+        primary_document_url:
+          type: string
+        description:
+          type: string
+    StockSearchResult:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        cik:
+          type: string
+        exchange:
+          type: string
+    OwnershipFiling:
+      type: object
+      properties:
+        form:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        primary_document_url:
+          type: string
+        description:
+          type: string
+    FilingDetail:
+      allOf:
+      - $ref: '#/components/schemas/Filing'
+      - type: object
+        properties:
+          ticker:
+            type: string
+          cik:
+            type: string
+          archive_url:
+            type: string
+          files:
+            type: array
+            items:
+              type: string
+    ScreenerRow:
+      type: object
+      properties:
+        cik:
+          type: string
+        name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        period_end:
+          type: string
+          format: date
+        accession:
+          type: string
+    FilingSection:
+      type: object
+      properties:
+        section:
+          type: string
+        content:
+          type: string
     ScreenerResult:
       type: object
       properties:
@@ -675,72 +641,33 @@ components:
             $ref: '#/components/schemas/ScreenerRow'
         meta:
           $ref: '#/components/schemas/ListMeta'
-    ScreenerRow:
-      type: object
-      properties:
-        cik:
-          type: string
-        name:
-          type: string
-        value:
-          type: number
-        unit:
-          type: string
-        period_end:
-          type: string
-          format: date
-        accession:
-          type: string
-    BarsResponse:
+    CompensationResponse:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Bar'
+            $ref: '#/components/schemas/CompensationFiling'
         meta:
-          $ref: '#/components/schemas/BarsMeta'
-    RiskFactorsDiff:
+          $ref: '#/components/schemas/ListMeta'
+    FilingSectionDetail:
       type: object
       properties:
         ticker:
           type: string
         cik:
           type: string
-        current:
-          $ref: '#/components/schemas/FilingRef'
-        previous:
-          $ref: '#/components/schemas/FilingRef'
-        diff:
-          $ref: '#/components/schemas/SectionDiff'
-    StockSearchResult:
-      type: object
-      properties:
-        ticker:
+        accession:
           type: string
-        name:
+        form:
           type: string
-        cik:
+        filed_at:
           type: string
-        exchange:
+          format: date
+        section:
           type: string
-    SectionDiff:
-      type: object
-      properties:
-        added:
-          type: array
-          items:
-            type: string
-        removed:
-          type: array
-          items:
-            type: string
-        modified:
-          type: array
-          items:
-            $ref: '#/components/schemas/DiffPair'
-        stats:
-          $ref: '#/components/schemas/SectionDiffStats'
+        content:
+          type: string
     CompanyProfile:
       type: object
       properties:
@@ -767,13 +694,47 @@ components:
         fiscal_year_end:
           type: string
           description: MMDD.
-    DiffPair:
+    SectionDiffStats:
       type: object
       properties:
-        before:
-          type: string
-        after:
-          type: string
+        before_paragraphs:
+          type: integer
+        after_paragraphs:
+          type: integer
+        unchanged_count:
+          type: integer
+        added_count:
+          type: integer
+        removed_count:
+          type: integer
+        modified_count:
+          type: integer
+    SectionDiff:
+      type: object
+      properties:
+        added:
+          type: array
+          items:
+            type: string
+        removed:
+          type: array
+          items:
+            type: string
+        modified:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffPair'
+        stats:
+          $ref: '#/components/schemas/SectionDiffStats'
+    OwnershipResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnershipFiling'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
     Bar:
       type: object
       properties:
@@ -791,31 +752,47 @@ components:
           type: number
         v:
           type: number
-    ListMeta:
+    StockSearchResponse:
       type: object
       properties:
-        next_cursor:
-          type: string
-          description: Cursor for the next page; absent on the last page.
-        as_of:
-          type: string
-          format: date-time
-        total:
-          type: integer
-    OwnershipFiling:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockSearchResult'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    FilingSections:
       type: object
       properties:
-        form:
+        ticker:
+          type: string
+        cik:
           type: string
         accession:
+          type: string
+        form:
           type: string
         filed_at:
           type: string
           format: date
-        primary_document_url:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilingSection'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
           type: string
-        description:
+          description: Machine-readable error code, e.g. `unknown_ticker`.
+        message:
           type: string
+        retry_after:
+          type: number
+          description: Present on rate-limit errors.
+      additionalProperties: true
     FinancialRatio:
       type: object
       properties:
@@ -852,6 +829,121 @@ components:
           type: number
         fcf_margin:
           type: number
+    FilingsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Filing'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    FilingRef:
+      type: object
+      properties:
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+    DiffPair:
+      type: object
+      properties:
+        before:
+          type: string
+        after:
+          type: string
+    InsidersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsiderTransaction'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    CompensationFiling:
+      type: object
+      properties:
+        form:
+          type: string
+        accession:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        primary_document_url:
+          type: string
+    Ratios:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        latest:
+          $ref: '#/components/schemas/FinancialRatio'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancialRatio'
+    Filing:
+      type: object
+      properties:
+        accession:
+          type: string
+        form:
+          type: string
+        filed_at:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        accepted_at:
+          type: string
+          format: date-time
+        items:
+          type: string
+          description: Comma-separated 8-K item codes.
+        primary_document_url:
+          type: string
+        description:
+          type: string
+        has_xbrl:
+          type: boolean
+    ListMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description: Cursor for the next page; absent on the last page.
+        as_of:
+          type: string
+          format: date-time
+        total:
+          type: integer
+    Financials:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        name:
+          type: string
+        concepts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConceptBlock'
     InsiderTransaction:
       type: object
       properties:
@@ -895,30 +987,47 @@ components:
           description: direct or indirect
         derivative:
           type: boolean
-    StockSearchResponse:
+    EventFilingsResponse:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/StockSearchResult'
+            $ref: '#/components/schemas/EventFiling'
         meta:
           $ref: '#/components/schemas/ListMeta'
-    SectionDiffStats:
+    FinancialConcept:
       type: object
       properties:
-        before_paragraphs:
-          type: integer
-        after_paragraphs:
-          type: integer
-        unchanged_count:
-          type: integer
-        added_count:
-          type: integer
-        removed_count:
-          type: integer
-        modified_count:
-          type: integer
+        ticker:
+          type: string
+        cik:
+          type: string
+        taxonomy:
+          type: string
+        concept:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricValue'
+    RiskFactorsDiff:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cik:
+          type: string
+        current:
+          $ref: '#/components/schemas/FilingRef'
+        previous:
+          $ref: '#/components/schemas/FilingRef'
+        diff:
+          $ref: '#/components/schemas/SectionDiff'
     MetricValue:
       type: object
       properties:
@@ -943,172 +1052,33 @@ components:
         filed_at:
           type: string
           format: date
-    FilingsResponse:
+    BarsResponse:
       type: object
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Filing'
+            $ref: '#/components/schemas/Bar'
         meta:
-          $ref: '#/components/schemas/ListMeta'
-    Financials:
-      type: object
-      properties:
-        ticker:
-          type: string
-        cik:
-          type: string
-        name:
-          type: string
-        concepts:
-          type: array
-          items:
-            $ref: '#/components/schemas/ConceptBlock'
-    EventFilingsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventFiling'
-        meta:
-          $ref: '#/components/schemas/ListMeta'
-    EventFiling:
-      type: object
-      properties:
-        accession:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        accepted_at:
-          type: string
-          format: date-time
-        items:
-          type: array
-          items:
-            type: string
-        primary_document_url:
-          type: string
-        description:
-          type: string
-    FilingDetail:
-      allOf:
-      - $ref: '#/components/schemas/Filing'
-      - type: object
-        properties:
-          ticker:
-            type: string
-          cik:
-            type: string
-          archive_url:
-            type: string
-          files:
-            type: array
-            items:
-              type: string
-    FilingSections:
-      type: object
-      properties:
-        ticker:
-          type: string
-        cik:
-          type: string
-        accession:
-          type: string
-        form:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        sections:
-          type: array
-          items:
-            $ref: '#/components/schemas/FilingSection'
-    CompensationFiling:
-      type: object
-      properties:
-        form:
-          type: string
-        accession:
-          type: string
-        filed_at:
-          type: string
-          format: date
-        period_end:
-          type: string
-          format: date
-        primary_document_url:
-          type: string
-    FilingSection:
-      type: object
-      properties:
-        section:
-          type: string
-        content:
-          type: string
-    Ratios:
-      type: object
-      properties:
-        ticker:
-          type: string
-        cik:
-          type: string
-        latest:
-          $ref: '#/components/schemas/FinancialRatio'
-        history:
-          type: array
-          items:
-            $ref: '#/components/schemas/FinancialRatio'
-  responses:
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+          $ref: '#/components/schemas/BarsMeta'
   parameters:
-    Ticker:
-      name: ticker
-      in: path
-      required: true
-      description: US equity ticker (case-insensitive).
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
       schema:
         type: string
     BarEnd:
       name: end
       in: query
       description: Inclusive upper bound. Default now.
+      schema:
+        type: string
+    Accession:
+      name: accession
+      in: path
+      required: true
+      description: SEC accession number.
       schema:
         type: string
     Limit:
@@ -1125,19 +1095,22 @@ components:
       description: Inclusive lower bound (YYYY-MM-DD or RFC3339).
       schema:
         type: string
-    Accession:
-      name: accession
+    Ticker:
+      name: ticker
       in: path
       required: true
-      description: SEC accession number.
+      description: US equity ticker (case-insensitive).
       schema:
         type: string
-    Cursor:
-      name: cursor
-      in: query
-      description: Opaque pagination cursor from a previous response's `meta.next_cursor`.
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
       schema:
         type: string
+        enum:
+        - gzip
     BarIntervalStocks:
       name: interval
       in: query
@@ -1156,15 +1129,42 @@ components:
         - 1w
         - 1mo
         default: 1m
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
-      required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
-      schema:
-        type: string
-        enum:
-        - gzip
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyHeader:
       type: apiKey
