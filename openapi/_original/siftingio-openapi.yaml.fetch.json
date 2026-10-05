@@ -1,0 +1,12 @@
+{
+ "url": "https://sifting.io/openapi.yaml",
+ "requested_url": "https://sifting.io/openapi.yaml",
+ "status": 200,
+ "content_type": "application/octet-stream",
+ "bytes": 71659,
+ "sha256": "56b3fb7398d568c5867af047f00f09237fb3cd9bfaed1da1dd4c5ab0d06277a8",
+ "fetched_at": "2026-10-04",
+ "fetched_by": "APIEvangelist-Harvest/1.0 (+https://apievangelist.com)",
+ "match": "equivalent",
+ "note": "Re-fetched from the provider by verify-openapi-sources.py; the provider's current document describes the same operations (Jaccard 0.974), but the bytes differ, so the archive is an earlier or reformatted copy."
+}
