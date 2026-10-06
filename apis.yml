@@ -41,7 +41,7 @@ accessModel:
 image: https://sifting.io/logo.svg
 url: https://raw.githubusercontent.com/api-evangelist/siftingio/refs/heads/main/apis.yml
 created: '2026-08-17'
-modified: '2026-08-17'
+modified: '2026-10-06'
 specificationVersion: '0.23'
 tags:
   - Financial market data
@@ -423,6 +423,8 @@ generated:
   confidence: 90
   at: '2026-08-17T11:48:02.881Z'
 common:
+- url: https://sifting.io/blog/feed.xml
+  type: BlogRSS
 - type: License
   name: MIT
   url: https://github.com/SiftingIO/siftingio-mcp/blob/main/LICENSE
