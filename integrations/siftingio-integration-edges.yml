@@ -14,7 +14,7 @@ edges:
     registered_name: io.sifting/mcp
     register_id: io.sifting/mcp
     detected_by: sweep-agent-tools.py
-    detected: '2026-10-14'
+    detected: '2026-10-15'
   mcp_registry:
     servers:
     - io.sifting/mcp
