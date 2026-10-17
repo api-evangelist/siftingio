@@ -122,16 +122,17 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   schemas:
-    SignalSummary:
+    SignalPrice:
       type: object
       properties:
-        signal:
-          $ref: '#/components/schemas/SignalVerdict'
-        score:
+        close:
           type: number
-          description: Overall score, -1 to +1.
-        counts:
-          $ref: '#/components/schemas/SignalCounts'
+        bar_status:
+          type: string
+          description: '`forming` (live tick folded into the current bar) or `closed` (last settled bar).'
+          enum:
+          - forming
+          - closed
     SignalMeta:
       type: object
       properties:
@@ -151,6 +152,24 @@ components:
       - neutral
       - buy
       - strong_buy
+    LiveSignalResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/LiveSignal'
+        meta:
+          $ref: '#/components/schemas/SignalMeta'
+    LiveSignal:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/SignalSummary'
+        oscillators:
+          $ref: '#/components/schemas/SignalGroup'
+        moving_averages:
+          $ref: '#/components/schemas/SignalGroup'
+        price:
+          $ref: '#/components/schemas/SignalPrice'
     SignalGroup:
       type: object
       description: One indicator group (oscillators or moving averages) with its own verdict.
@@ -164,21 +183,24 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SignalIndicator'
-    SignalVote:
-      type: string
-      description: A single indicator's vote.
-      enum:
-      - buy
-      - neutral
-      - sell
-    SignalEvent:
-      type: string
-      description: A discrete marker that fired on a bar.
-      enum:
-      - golden_cross
-      - death_cross
-      - macd_cross_up
-      - macd_cross_down
+    SignalPoint:
+      type: object
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Bar open time, Unix epoch ms.
+        close:
+          type: number
+        summary:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Score for the bar, -1 to +1.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalEvent'
     SignalHistoryResponse:
       type: object
       properties:
@@ -202,6 +224,16 @@ components:
           type: number
           description: Present on rate-limit errors.
       additionalProperties: true
+    SignalSummary:
+      type: object
+      properties:
+        signal:
+          $ref: '#/components/schemas/SignalVerdict'
+        score:
+          type: number
+          description: Overall score, -1 to +1.
+        counts:
+          $ref: '#/components/schemas/SignalCounts'
     SignalCounts:
       type: object
       description: Vote tally across every indicator returned.
@@ -212,17 +244,6 @@ components:
           type: integer
         sell:
           type: integer
-    LiveSignal:
-      type: object
-      properties:
-        summary:
-          $ref: '#/components/schemas/SignalSummary'
-        oscillators:
-          $ref: '#/components/schemas/SignalGroup'
-        moving_averages:
-          $ref: '#/components/schemas/SignalGroup'
-        price:
-          $ref: '#/components/schemas/SignalPrice'
     SignalIndicator:
       type: object
       properties:
@@ -243,43 +264,28 @@ components:
           description: Stochastic %D (Stochastic rows only).
         vote:
           $ref: '#/components/schemas/SignalVote'
-    LiveSignalResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/LiveSignal'
-        meta:
-          $ref: '#/components/schemas/SignalMeta'
-    SignalPrice:
-      type: object
-      properties:
-        close:
-          type: number
-        bar_status:
-          type: string
-          description: '`forming` (live tick folded into the current bar) or `closed` (last settled bar).'
-          enum:
-          - forming
-          - closed
-    SignalPoint:
-      type: object
-      properties:
-        t:
-          type: integer
-          format: int64
-          description: Bar open time, Unix epoch ms.
-        close:
-          type: number
-        summary:
-          $ref: '#/components/schemas/SignalVerdict'
-        score:
-          type: number
-          description: Score for the bar, -1 to +1.
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/SignalEvent'
+    SignalVote:
+      type: string
+      description: A single indicator's vote.
+      enum:
+      - buy
+      - neutral
+      - sell
+    SignalEvent:
+      type: string
+      description: A discrete marker that fired on a bar.
+      enum:
+      - golden_cross
+      - death_cross
+      - macd_cross_up
+      - macd_cross_down
   responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     TooManyRequests:
       description: Rate limit exceeded.
       headers:
@@ -297,18 +303,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
     InsufficientHistory:
       description: Not enough bars to compute a signal for this symbol and interval.
       content:
@@ -317,6 +311,12 @@ components:
             $ref: '#/components/schemas/Error'
     Forbidden:
       description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
       content:
         application/json:
           schema:

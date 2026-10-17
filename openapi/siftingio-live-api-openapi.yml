@@ -165,6 +165,15 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   parameters:
+    AcceptEncodingGzip:
+      name: Accept-Encoding
+      in: header
+      required: true
+      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      schema:
+        type: string
+        enum:
+        - gzip
     Chain:
       name: chain
       in: path
@@ -192,13 +201,6 @@ components:
         - crypto
         - forex
         - commodities
-    Pair:
-      name: pair
-      in: path
-      required: true
-      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
-      schema:
-        type: string
     Venue:
       name: venue
       in: path
@@ -218,103 +220,31 @@ components:
       description: Symbol, normalized to the venue's canonical form.
       schema:
         type: string
-    AcceptEncodingGzip:
-      name: Accept-Encoding
-      in: header
+    Pair:
+      name: pair
+      in: path
       required: true
-      description: Must include `gzip`; this endpoint returns 406 otherwise.
+      description: DEX pair (TOKEN0-TOKEN1) or FX pair (e.g. EURUSD).
       schema:
         type: string
-        enum:
-        - gzip
-  responses:
-    TooManyRequests:
-      description: Rate limit exceeded.
-      headers:
-        Retry-After:
-          description: Seconds to wait before retrying.
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound:
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServiceUnavailable:
-      description: Upstream or snapshot temporarily unavailable.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    BadRequest:
-      description: Invalid request parameters.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid API key.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden:
-      description: Valid key, but the plan or tier does not include this market/venue.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    GzipRequired:
-      description: 'This endpoint requires `Accept-Encoding: gzip`.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
-    LastTVL:
+    SnapshotResponse:
       type: object
       properties:
-        chain:
-          type: string
-        pair:
-          type: string
-        usd:
-          type: string
-        r0:
-          type: string
-          description: Reserve of token0.
-        r1:
-          type: string
-          description: Reserve of token1.
-        n:
-          type: integer
-          description: Pools aggregated.
-        v:
-          type: integer
-        t:
-          type: integer
-          format: int64
-    LastClose:
-      type: object
-      properties:
-        s:
-          type: string
-          description: Symbol.
-        c:
-          type: string
-          description: Close price.
-        d:
-          type: string
-          description: UTC close date, YYYY-MM-DD.
-        t:
-          type: integer
-          format: int64
-          description: Close-boundary Unix epoch milliseconds.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotEntry'
+        meta:
+          type: object
+          properties:
+            as_of:
+              type: string
+              format: date-time
+            venue:
+              type: string
+            count:
+              type: integer
     Error:
       type: object
       required:
@@ -357,6 +287,29 @@ components:
           type: integer
           format: int64
           description: Unix epoch milliseconds.
+    LastTVL:
+      type: object
+      properties:
+        chain:
+          type: string
+        pair:
+          type: string
+        usd:
+          type: string
+        r0:
+          type: string
+          description: Reserve of token0.
+        r1:
+          type: string
+          description: Reserve of token1.
+        n:
+          type: integer
+          description: Pools aggregated.
+        v:
+          type: integer
+        t:
+          type: integer
+          format: int64
     LastQuote:
       type: object
       properties:
@@ -391,23 +344,70 @@ components:
           type: integer
           format: int64
           description: Unix epoch milliseconds.
-    SnapshotResponse:
+    LastClose:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SnapshotEntry'
-        meta:
-          type: object
-          properties:
-            as_of:
-              type: string
-              format: date-time
-            venue:
-              type: string
-            count:
-              type: integer
+        s:
+          type: string
+          description: Symbol.
+        c:
+          type: string
+          description: Close price.
+        d:
+          type: string
+          description: UTC close date, YYYY-MM-DD.
+        t:
+          type: integer
+          format: int64
+          description: Close-boundary Unix epoch milliseconds.
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    GzipRequired:
+      description: 'This endpoint requires `Accept-Encoding: gzip`.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Upstream or snapshot temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Valid key, but the plan or tier does not include this market/venue.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     ApiKeyHeader:
       type: apiKey
