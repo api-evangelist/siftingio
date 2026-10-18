@@ -46,7 +46,7 @@ specificationVersion: '0.23'
 tags:
   - Financial market data
   - Stocks/equities
-  - Forex
+  - Foreign Exchange
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
@@ -103,7 +103,7 @@ apis:
   tags:
   - Financial market data
   - Stocks/equities
-  - Forex
+  - Foreign Exchange
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
@@ -147,7 +147,7 @@ apis:
   tags:
   - Financial market data
   - Stocks/equities
-  - Forex
+  - Foreign Exchange
   - Cryptocurrency
   - DeFi/on-chain
   - Commodities
@@ -235,6 +235,8 @@ apis:
   humanURL: https://sifting.io/docs
   baseURL: https://api.sifting.io
   tags:
+  - Cryptocurrency
+  tags_raw:
   - Crypto
   properties:
   - type: OpenAPI
@@ -255,6 +257,8 @@ apis:
   humanURL: https://sifting.io/docs
   baseURL: https://api.sifting.io
   tags:
+  - Decentralized Exchange
+  tags_raw:
   - DEX
   properties:
   - type: OpenAPI
@@ -295,6 +299,8 @@ apis:
   humanURL: https://sifting.io/docs
   baseURL: https://api.sifting.io
   tags:
+  - Foreign Exchange
+  tags_raw:
   - Forex
   properties:
   - type: OpenAPI
