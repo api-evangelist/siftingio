@@ -168,3 +168,9 @@ components:
       type: apiKey
       in: query
       name: api_key
+x-provenance:
+  method: harvested
+  publisher: SiftingIO
+  source: https://sifting.io/openapi.yaml
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
