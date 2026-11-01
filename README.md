@@ -1,4 +1,4 @@
-# siftingio
+# SiftingIO
 
 <!-- API-EVANGELIST-PROVENANCE:BEGIN -->
 > ### About this repository
@@ -64,4 +64,163 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Market data API platform providing real-time and historical data for stocks, FX, crypto, commodities, DEX, and on-chain markets through REST, WebSocket, and FIX APIs. Notably agent-forward with a hosted MCP server, llms.txt, and published agent skills.
+Cross-asset market data APIs covering US equities, forex, cryptocurrency, DeFi/on-chain, commodities, and SEC/EDGAR fundamentals, aggregated across venues and normalized into one JSON schema so every asset class shares the same fields, auth model and integration flow. Delivered over REST (37 operations under a public OpenAPI 3.1 contract), a WebSocket stream described by a public AsyncAPI 3.0 contract, and a documented FIX 4.4 market-data feed. Fundamentals cover filings, filing-text extraction and risk-factor diffs, XBRL financials, ratios, insiders, ownership and 13F holdings; reference data covers market status, hours and holiday calendars; derived data covers technical signals and on-chain TVL. Official Go, Python and JavaScript SDKs, an open-source (locally-run) MCP server with 36 tools, and a provider-published agent ruleset. Operated by SaltingIO LLC, a Wyoming company; explicitly not a broker, exchange or trading venue.
+
+**Areas:** Financial market data · Stocks/equities · Foreign Exchange · Cryptocurrency · DeFi/on-chain · Commodities · SEC Filings · XBRL · Fundamentals · Fintech · Quant/trading infrastructure · Real-Time Streaming
+
+## SiftingIO on APIs.io
+
+Everything profiled for SiftingIO is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/siftingio/](https://apis.io/providers/siftingio/)** — or go straight to one of the APIs or properties below.
+
+### APIs (13)
+
+- [SiftingIO Live Stream](https://apis.io/apis/siftingio/siftingio-live-stream/) — WebSocket streaming API for live market data, described by an AsyncAPI 3.0 contract. Also offers a documented FIX API.
+- [SiftingIO MCP Server](https://apis.io/apis/siftingio/siftingio-mcp-server/) — LOCALLY-RUN MCP server, not a hosted endpoint. The client launches it (`npx -y siftingio-mcp`, or the Python package) and it runs on the user's own machine,…
+- [SiftingIO Commodities API](https://apis.io/apis/siftingio/siftingio-commodities-api/) — Historical OHLC bars for commodities (metals, energy, industrials).
+- [SiftingIO Convert API](https://apis.io/apis/siftingio/siftingio-convert-api/) — Live currency and token conversion across forex and crypto.
+- [SiftingIO Crypto API](https://apis.io/apis/siftingio/siftingio-crypto-api/) — Historical OHLCV bars for crypto symbols.
+- [SiftingIO DEX API](https://apis.io/apis/siftingio/siftingio-dex-api/) — On-chain wallet portfolios and historical DEX bars.
+- [SiftingIO Filers API](https://apis.io/apis/siftingio/siftingio-filers-api/) — 13F institutional holdings.
+- [SiftingIO Forex API](https://apis.io/apis/siftingio/siftingio-forex-api/) — Historical OHLC bars for FX pairs.
+- [SiftingIO Live API](https://apis.io/apis/siftingio/siftingio-live-api/) — Live market data read from the engine's latest snapshot.
+- [SiftingIO Markets API](https://apis.io/apis/siftingio/siftingio-markets-api/) — Market catalog, status, hours, and holiday calendars.
+- [SiftingIO Signals API](https://apis.io/apis/siftingio/siftingio-signals-api/) — Technical-analysis signals (live and historical) across stocks, forex, crypto, and commodities.
+- [SiftingIO Stocks API](https://apis.io/apis/siftingio/siftingio-stocks-api/) — US-equity fundamentals (SEC) and historical bars.
+- [SiftingIO Economic Calendar API](https://apis.io/apis/siftingio/siftingio-economic-calendar-api/) — US macro economic events.
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### AsyncAPI (1)
+
+Event-driven and webhook contracts.
+
+- [SiftingIO Live Stream](https://apis.io/asyncapis/siftingio/siftingio-asyncapi/)
+
+#### Event channels (1)
+
+Individual events and webhooks the provider emits.
+
+- [/ws/v1](https://apis.io/channels/siftingio/ws-v1/)
+
+#### MCP servers (2)
+
+Model Context Protocol servers that expose the API to agents.
+
+- [io.sifting/mcp](https://apis.io/servers/siftingio/io-sifting-mcp/)
+- [mcp](https://apis.io/servers/siftingio/mcp/)
+
+#### Agentic access (1)
+
+Which operations an agent can call, which act, and which need a human in the loop.
+
+- [Siftingio Agentic Access](https://apis.io/agentic-access/siftingio/siftingio-agentic-access/)
+
+#### Overlays (11)
+
+OpenAPI overlays, including conversational phrasing for each operation.
+
+- [Siftingio Commodities Overlay](https://apis.io/overlays/siftingio/siftingio-commodities-overlay/)
+- [Siftingio Convert Overlay](https://apis.io/overlays/siftingio/siftingio-convert-overlay/)
+- [Siftingio Crypto Overlay](https://apis.io/overlays/siftingio/siftingio-crypto-overlay/)
+- [Siftingio Dex Overlay](https://apis.io/overlays/siftingio/siftingio-dex-overlay/)
+- [Siftingio Economiccalendar Overlay](https://apis.io/overlays/siftingio/siftingio-economiccalendar-overlay/)
+- [Siftingio Filers Overlay](https://apis.io/overlays/siftingio/siftingio-filers-overlay/)
+- [Siftingio Forex Overlay](https://apis.io/overlays/siftingio/siftingio-forex-overlay/)
+- [Siftingio Live Overlay](https://apis.io/overlays/siftingio/siftingio-live-overlay/)
+- [Siftingio Markets Overlay](https://apis.io/overlays/siftingio/siftingio-markets-overlay/)
+- [Siftingio Signals Overlay](https://apis.io/overlays/siftingio/siftingio-signals-overlay/)
+- [Siftingio Stocks Overlay](https://apis.io/overlays/siftingio/siftingio-stocks-overlay/)
+
+#### Security (2)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Siftingio Authentication](https://apis.io/security/siftingio/siftingio-authentication/)
+- [Siftingio Domain Security](https://apis.io/security/siftingio/siftingio-domain-security/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Siftingio Plans Pricing](https://apis.io/plans/siftingio/siftingio-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Siftingio Rate Limits](https://apis.io/rate-limits/siftingio/siftingio-rate-limits/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://sifting.io)
+- [Documentation](https://sifting.io/docs)
+- [Getting started](https://sifting.io/docs/quickstart)
+- [API reference](https://sifting.io/docs)
+- [Pricing](https://sifting.io/pricing)
+- [Sign up](https://sifting.io/register)
+- [Support](https://sifting.io/contact)
+- [Changelog](https://sifting.io/changelog)
+- [Blog](https://sifting.io/blog)
+- [Terms of service](https://sifting.io/legal/terms-of-use)
+- [Privacy policy](https://sifting.io/legal/privacy-policy)
+- [GitHub](https://github.com/SiftingIO)
+- [Status](https://siftingio.instatus.com/)
+
+## API Evangelist rating
+
+**Kin Score 61.1** — strong · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 63.3 |
+| Contract quality | 54.3 |
+| Contract governance | 4.5 |
+| Operational transparency | 57.9 |
+| Developer ergonomics | 83.3 |
+| Access clarity | 76.3 |
+
+**Agent readiness 43.2** — agent-native
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | derived (partial credit) |
+| Reversibility Documented | na |
+| MCP Server | documented (partial credit) |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | na |
+| Error Semantics | documented (partial credit) |
+| OpenAPI Examples | partial |
+| Rate Limit Signal | verified |
+| Event Surface Described | derived (partial credit) |
+| Agent Skills | yes |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | na |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | partial |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 28.7** — Securities & Market Data
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/siftingio/](https://apis.io/providers/siftingio/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for SiftingIO: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/siftingio/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
